@@ -55,7 +55,8 @@ def multithread_buchen(year, month, day, period, user, thread_num):
 
 while True:
 
-    print(os.environ.get("login_data", None))
+    print(json.loads(os.environ.get("login_data", None)))
+    break
     """
     user_data = json.loads(os.environ.get("login_data"))
     for user in user_data:
