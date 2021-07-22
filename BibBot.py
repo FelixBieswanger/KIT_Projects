@@ -77,7 +77,6 @@ class BibBot:
                     })
             # Wenn größer gleich 1 Plätze gefunden wurden, zurückgeben
             if len(plätze_in_area) != 0:
-                print("Bibot", self.index, "gefundene plätze", len(plätze_in_area))
                 return plätze_in_area
         # Wenn für keine der Etagen ein Plätz gefunden wurde, leere liste zurückgeben
         print("Bibot", self.index, "KEINE PLÄTZE")
@@ -100,10 +99,11 @@ class BibBot:
         for inpu in soup.find("form", {"id": "main"}).find_all("input", {"type": "hidden"}):
             content_speichern[inpu["name"]] = inpu["value"]
 
-        # Nur buchen, wenn von den anderen Threads noch kein Platz gefunden wurde
-        if self.platzholder.get() == None:
-            # Defining critical area
-            with self.lock:
+        # Defining critical area
+        with self.lock:
+            # Nur buchen, wenn von den anderen Threads noch kein Platz gefunden wurde
+            if self.platzholder.get() == None:
+
                 buchung_abschicken = self.session.post(
                     speicher_url, data=content_speichern).content.decode("utf-8")
 
