@@ -58,7 +58,7 @@ while True:
     user_data = json.loads(os.environ.get("login_data", None))
     for user in user_data:
         multithread_buchen(
-            year="2022",
+            year="2021",
             month="07",
             day="24",
             user=user,

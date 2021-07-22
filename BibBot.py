@@ -46,7 +46,7 @@ class BibBot:
         logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
         self.bib_id = self.extract_param(logon_url, "creatormatch")
 
-    def find_free_seats(self, jahr, monat, tag, period_param, scan=True):
+    def find_free_seats(self, jahr, monat, tag, period_param):
         for area in self.ares_prio:
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
@@ -69,9 +69,6 @@ class BibBot:
                     })
             if len(plätze_in_area) != 0:
                 return plätze_in_area
-            else:
-                print("Keine Plätze in", self.area_names[area])
-        print("KEINE PLÄTZE GERADE")
         return []
 
     def platz_buchen(self, platz):
