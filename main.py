@@ -9,7 +9,7 @@ from datetime import datetime
 sched = BlockingScheduler()
 
 
-@sched.scheduled_job('cron', day_of_week='mon-fri', hour="14", minute="29")
+@sched.scheduled_job('cron', day_of_week='mon-fri', hour="14", minute="37")
 def scheduled_job():
     platzholder = Platzholder()
     lock = threading.Lock()
