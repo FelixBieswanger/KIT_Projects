@@ -1,4 +1,8 @@
 # @ Felix Bieswanger
+import requests
+from bs4 import BeautifulSoup
+
+
 class BibBot:
     def __init__(self, index, platzholder, lock):
         # Meta Data
