@@ -57,15 +57,18 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
 
 while True:
 
-    user_data = json.loads(os.environ.get("login_data", None))
+    #user_data = json.loads(os.environ.get("login_data", None))
+    user_data = [{"username": "@2374109",
+                  "password": "63182776",
+                  "name": "Felix B"}]
     for user in user_data:
         multithread_buchen(
             year="2021",
             month="07",
             day="24",
             user=user,
-            period=2,
-            thread_num=1,
+            period="2",
+            thread_num=8,
             time_start=datetime.today()
         )
 

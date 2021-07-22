@@ -52,7 +52,6 @@ class BibBot:
             # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
-            print(scan_url)
             resp = requests.get(scan_url)
 
             # Alle Freien Plätze extrahieren
@@ -96,7 +95,7 @@ class BibBot:
         speicher_url = self.build_url(endpoint="edit_entry_handler")
 
         platz_resp = self.session.get(platz_url).content.decode("utf-8")
-        soup = BeautifulSoup(platz_resp)
+        soup = BeautifulSoup(platz_resp, "html.parser")
         content_speichern = dict()
         for inpu in soup.find("form", {"id": "main"}).find_all("input", {"type": "hidden"}):
             content_speichern[inpu["name"]] = inpu["value"]
