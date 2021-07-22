@@ -29,8 +29,9 @@ def multithread_buchen(year, month, day, period, user, thread_num):
             monat=str(month),
             tag=str(day),
             period_param=period)
-        platzholder.set(bot.platz_buchen(
-            free_seats[randint(0, len(free_seats))-1]))
+        if len(free_seats) > 0:
+            platzholder.set(bot.platz_buchen(
+                free_seats[randint(0, len(free_seats))-1]))
 
     while platzholder.get() == None:
         if datetime.today().minute == 32:
