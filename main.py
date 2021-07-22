@@ -31,6 +31,9 @@ def scheduled_job():
             free_seats[randint(0, len(free_seats))-1]))
 
     while platzholder.get() == None:
+        if datetime.today().minute == 32:
+            return
+
         threads = list()
         for i in range(multiprocessing.cpu_count()):
             x = threading.Thread(target=get_bib_platz, args=(i,))
