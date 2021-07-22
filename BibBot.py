@@ -1,3 +1,4 @@
+# @ Felix Bieswanger
 class BibBot:
     def __init__(self, index, platzholder, lock):
         # Meta Data
