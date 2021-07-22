@@ -33,6 +33,9 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
 
     while platzholder.get() == None:
         if (datetime.today() - time_start).seconds > 150:
+            for i in range(5):
+                print("=============")
+            print("TIME IS UP")
             return
 
         threads = list()
@@ -62,7 +65,7 @@ while True:
             day="24",
             user=user,
             period=2,
-            thread_num=8,
+            thread_num=1,
             time_start=datetime.today()
         )
 

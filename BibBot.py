@@ -52,6 +52,7 @@ class BibBot:
             # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
+            print(scan_url)
             resp = requests.get(scan_url)
 
             # Alle Freien Plätze extrahieren
