@@ -8,7 +8,7 @@ class BibBot:
         # Meta Data
         self.session = requests.Session()
         self.base_url = "https://raumbuchung.bibliothek.kit.edu/sitzplatzreservierung/"
-        self.ares_prio = ["34", "35", "21", "19", "20"]
+        self.area_prio = ["34", "35", "21", "19", "20"]
         self.area_names = {
             "35": "altbau 2.OG (empore)",
             "34": "altbau 2.OG",
@@ -47,16 +47,24 @@ class BibBot:
         self.bib_id = self.extract_param(logon_url, "creatormatch")
 
     def find_free_seats(self, jahr, monat, tag, period_param):
-        for area in self.ares_prio:
+        # Scannen aller Etagen in der definierten Reihenfolge
+        for area in self.area_prio:
+            # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
             resp = requests.get(scan_url)
+
+            # Alle Freien Plätze extrahieren
             sitzplätze_html = BeautifulSoup(resp.content, "html.parser")
             sitzplätze_tags = sitzplätze_html.find_all("td", {"class": "new"})
             free_seats_url = [tag.find("a")["href"] for tag in sitzplätze_tags]
+
+            # Wenn der freie Platz für den gewüschten Zeitslot frei ist, der
+            # liste von freien Plätzen der Etage hinzufügen
             plätze_in_area = list()
             for url in free_seats_url:
                 if self.extract_param(url, "period") == period_param:
+                    # Platz-Struktur bauen (für die Buchung)
                     plätze_in_area.append({
                         "area": area,
                         "area_name": self.area_names[area],
@@ -67,8 +75,12 @@ class BibBot:
                         "month": monat,
                         "day": tag
                     })
+            # Wenn größer gleich 1 Plätze gefunden wurden, zurückgeben
             if len(plätze_in_area) != 0:
+                print("Bibot", self.index, "gefundene plätze", len(plätze_in_area))
                 return plätze_in_area
+        # Wenn für keine der Etagen ein Plätz gefunden wurde, leere liste zurückgeben
+        print("Bibot", self.index, "KEINE PLÄTZE")
         return []
 
     def platz_buchen(self, platz):
@@ -88,14 +100,22 @@ class BibBot:
         for inpu in soup.find("form", {"id": "main"}).find_all("input", {"type": "hidden"}):
             content_speichern[inpu["name"]] = inpu["value"]
 
+        # Nur buchen, wenn von den anderen Threads noch kein Platz gefunden wurde
         if self.platzholder.get() == None:
+            # Defining critical area
             with self.lock:
                 buchung_abschicken = self.session.post(
                     speicher_url, data=content_speichern).content.decode("utf-8")
+
+                # Validieren ob für die gewünschte Periode ein Platz gebucht wurde
                 soup = BeautifulSoup(buchung_abschicken, "html.parser")
                 for td in soup.find_all("td", {"class": "K writable"}):
+                    # Nur zurückgeben, wenn tatsächlich gebucht wurde
                     if str(self.zeiten.index(td.find("a")["title"])) == platz["period"]:
                         print("Bibot", self.index, "Platz erfolgreich gebucht")
                         return platz
+
+                # Warsch wurde inzwichen zeit der platz belegt, sodass eine Buchung
+                # nicht mehr möglich war. None wird zurückgeben
                 print("Bibot", self.index, "Fehler bei Buchung")
                 return None
