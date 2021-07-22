@@ -31,7 +31,7 @@ def scheduled_job():
             free_seats[randint(0, len(free_seats))-1]))
 
     while platzholder.get() == None:
-        if datetime.today().minute == 32:
+        if datetime.today().minute == 38:
             return
 
         threads = list()
