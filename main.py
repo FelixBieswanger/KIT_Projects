@@ -3,39 +3,48 @@ from Platzholder import Platzholder
 from random import randint
 import threading
 import multiprocessing
+from apscheduler.schedulers.blocking import BlockingScheduler
+from datetime import datetime
 
-platzholder = Platzholder()
-lock = threading.Lock()
-
-
-def get_bib_platz(index):
-    if platzholder.get() != None:
-        return
-
-    bot = BibBot(index, platzholder, lock)
-    bot.anmelden(username="@2374109", password="63182776")
-    free_seats = bot.find_free_seats(
-        jahr="2021",
-        monat="07",
-        tag="22",
-        period_param="1")
-    platzholder.set(bot.platz_buchen(
-        free_seats[randint(0, len(free_seats))-1]))
+sched = BlockingScheduler()
 
 
-while platzholder.get() == None:
-    threads = list()
-    for i in range(multiprocessing.cpu_count()):
-        x = threading.Thread(target=get_bib_platz, args=(i,))
-        threads.append(x)
-        x.start()
+@sched.scheduled_job('cron', day_of_week='mon-fri', hour="14", minute="29")
+def scheduled_job():
+    platzholder = Platzholder()
+    lock = threading.Lock()
 
-    for index, thread in enumerate(threads):
-        thread.join()
-        print("Bibot", index, "finished")
+    today = datetime.today()
 
-for i in range(3):
-    print()
-print("=================")
-for key in (d:= platzholder.get()):
-    print(key, d[key])
+    def get_bib_platz(index):
+        if platzholder.get() != None:
+            return
+
+        bot = BibBot(index, platzholder, lock)
+        bot.anmelden(username="@2374109", password="63182776")
+        free_seats = bot.find_free_seats(
+            jahr=str(today.year),
+            monat=str(today.month),
+            tag=str(today.day),
+            period_param="1")
+        platzholder.set(bot.platz_buchen(
+            free_seats[randint(0, len(free_seats))-1]))
+
+    while platzholder.get() == None:
+        threads = list()
+        for i in range(multiprocessing.cpu_count()):
+            x = threading.Thread(target=get_bib_platz, args=(i,))
+            threads.append(x)
+            x.start()
+
+        for index, thread in enumerate(threads):
+            thread.join()
+            print("Bibot", index, "finished")
+
+    print("=================")
+    d = platzholder.get()
+    for key in d:
+        print(key, d[key])
+
+
+sched.start()
