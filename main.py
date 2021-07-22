@@ -12,11 +12,9 @@ import json
 COUNT_THREADS = 8
 
 
-def multithread_buchen(year, month, day, period, user, thread_num):
+def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     platzholder = Platzholder()
     lock = threading.Lock()
-
-    today = datetime.today()
 
     def controll_bot(index):
         if platzholder.get() != None:
@@ -34,7 +32,7 @@ def multithread_buchen(year, month, day, period, user, thread_num):
                 free_seats[randint(0, len(free_seats))-1]))
 
     while platzholder.get() == None:
-        if datetime.today().minute == 32:
+        if (datetime.today() - time_start).seconds > 150:
             return
 
         threads = list()
@@ -64,7 +62,8 @@ while True:
             day="24",
             user=user,
             period=2,
-            thread_num=8
+            thread_num=8,
+            time_start=datetime.today()
         )
 
     break
