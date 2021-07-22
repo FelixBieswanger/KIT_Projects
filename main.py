@@ -55,11 +55,14 @@ def multithread_buchen(year, month, day, period, user, thread_num):
 
 while True:
 
+    print(os.environ.get("login_data", None))
+    """
     user_data = json.loads(os.environ.get("login_data"))
     for user in user_data:
         print(user)
 
-    """
+
+
     # get time now
     now = datetime.today()
 
