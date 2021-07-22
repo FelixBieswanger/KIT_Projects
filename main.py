@@ -9,7 +9,7 @@ import time
 import os
 import json
 
-COUNT_THREADS = 8
+MAX_THEAD_COUNT = 8
 
 
 def multithread_buchen(year, month, day, period, user, thread_num, time_start):
@@ -57,29 +57,9 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
 
 while True:
 
-    #user_data = json.loads(os.environ.get("login_data", None))
-    user_data = [{"username": "@2374109",
-                  "password": "63182776",
-                  "name": "Felix B"}]
-    for user in user_data:
-        multithread_buchen(
-            year="2021",
-            month="07",
-            day="24",
-            user=user,
-            period="2",
-            thread_num=8,
-            time_start=datetime.today()
-        )
-
-    break
-    """
-  )
-
-
-
     # get time now
     now = datetime.today()
+    user_data = json.loads(os.environ.get("login_data", None))
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
@@ -93,8 +73,14 @@ while True:
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        multithread_buchen(year=tomorrow.year, month=tomorrow.month,
-                 day=tomorrow.day, period=0)
+        for user in user_data:
+            multithread_buchen(
+                year=tomorrow.year,
+                month=tomorrow.month,
+                day=tomorrow.day,
+                period=0,
+                thread_num=MAX_THEAD_COUNT,
+                time_start=datetime.today())
 
     # es ist nach der buchungsessions morgens
     if(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
@@ -105,6 +91,11 @@ while True:
         diff = (start_nachmittag - datetime.today())
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
-
-        multithread_buchen(year=now.year, month=now.month, day=now.day, period=1)
-    """
+        for user in user_data:
+            multithread_buchen(
+                year=now.year,
+                month=now.month,
+                day=now.day,
+                period=1,
+                thread_num=MAX_THEAD_COUNT,
+                time_start=datetime.today())
