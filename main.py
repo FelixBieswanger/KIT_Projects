@@ -55,12 +55,20 @@ def multithread_buchen(year, month, day, period, user, thread_num):
 
 while True:
 
-    print(json.loads(os.environ.get("login_data", None)))
+    user_data = json.loads(os.environ.get("login_data", None))
+    for user in user_data:
+        multithread_buchen(
+            year="2022",
+            month="07",
+            day="24",
+            user=user,
+            period=2,
+            thread_num=8
+        )
+
     break
     """
-    user_data = json.loads(os.environ.get("login_data"))
-    for user in user_data:
-        print(user)
+  )
 
 
 
@@ -79,7 +87,7 @@ while True:
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        do_stuff(year=tomorrow.year, month=tomorrow.month,
+        multithread_buchen(year=tomorrow.year, month=tomorrow.month,
                  day=tomorrow.day, period=0)
 
     # es ist nach der buchungsessions morgens
@@ -92,5 +100,5 @@ while True:
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        do_stuff(year=now.year, month=now.month, day=now.day, period=1)
+        multithread_buchen(year=now.year, month=now.month, day=now.day, period=1)
     """
