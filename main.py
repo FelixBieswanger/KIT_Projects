@@ -6,20 +6,24 @@ import multiprocessing
 from datetime import datetime
 import datetime as dt
 import time
+import os
+import json
+
+COUNT_THREADS = 8
 
 
-def do_stuff(year, month, day, period):
+def multithread_buchen(year, month, day, period, user, thread_num):
     platzholder = Platzholder()
     lock = threading.Lock()
 
     today = datetime.today()
 
-    def get_bib_platz(index):
+    def controll_bot(index):
         if platzholder.get() != None:
             return
 
         bot = BibBot(index, platzholder, lock)
-        bot.anmelden(username="@2374109", password="63182776")
+        bot.anmelden(username=user["username"], password=user["password"])
         free_seats = bot.find_free_seats(
             jahr=str(year),
             monat=str(month),
@@ -33,8 +37,8 @@ def do_stuff(year, month, day, period):
             return
 
         threads = list()
-        for i in range(multiprocessing.cpu_count()):
-            x = threading.Thread(target=get_bib_platz, args=(i,))
+        for i in range(thread_num):
+            x = threading.Thread(target=controll_bot, args=(i,))
             threads.append(x)
             x.start()
 
@@ -43,12 +47,19 @@ def do_stuff(year, month, day, period):
             print("Bibot", index, "finished")
 
     print("=================")
+    print("Für:", user["name"])
     d = platzholder.get()
     for key in d:
         print(key, d[key])
 
 
 while True:
+
+    user_data = json.loads(os.environ.get("login_data"))
+    for user in user_data:
+        print(user)
+
+    """
     # get time now
     now = datetime.today()
 
@@ -78,3 +89,4 @@ while True:
         time.sleep(diff.seconds)
 
         do_stuff(year=now.year, month=now.month, day=now.day, period=1)
+    """
