@@ -1,3 +1,7 @@
+
+# Klasse die Speicherkopplung zwischen den Threads realisiert
+
+
 class Platzholder:
     def __init__(self):
         self.final_platz = None

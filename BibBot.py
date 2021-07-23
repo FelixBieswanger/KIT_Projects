@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 class BibBot:
-    def __init__(self, index):
+    def __init__(self, index=0):
         # Meta Data
         self.session = requests.Session()
         self.base_url = "https://raumbuchung.bibliothek.kit.edu/sitzplatzreservierung/"
@@ -18,7 +18,6 @@ class BibBot:
         }
         self.zeiten = ["vormittags", "nachmittags", "abends"]
         self.index = index
-        print("Bibot", self.index, "has started")
 
     def build_url(self, endpoint, **kwargs):
         params = "&".join(["=".join((key, kwargs[key])) for key in kwargs])
@@ -61,7 +60,7 @@ class BibBot:
             # liste von freien Plätzen der Etage hinzufügen
             plätze_in_area = list()
             for url in free_seats_url:
-                if self.extract_param(url, "period") == period_param:
+                if self.extract_param(url, "period") == str(period_param):
                     # Platz-Struktur bauen (für die Buchung)
                     plätze_in_area.append({
                         "area": area,
@@ -112,3 +111,6 @@ class BibBot:
         # nicht mehr möglich war. None wird zurückgeben
         print("Bibot", self.index, "Fehler bei Buchung")
         return None
+
+    def remove_old_bookings(self, year, month, day):
+        pass

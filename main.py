@@ -13,42 +13,75 @@ MAX_THEAD_COUNT = 8
 
 
 def multithread_buchen(year, month, day, period, user, thread_num, time_start):
+    """
+    SET UP (Static Part)
+    Der Prozess wird allerdings 3min vor start der Buchungsphase gestatet, sodass Setup bereits durchgeführt werden kann
+    """
+
     platzholder = Platzholder()
     lock = threading.Lock()
 
-    def controll_bot(index):
-        if platzholder.get() != None:
-            return
-
-        bot = BibBot(index)
+    # Es werden so viele bots erstellt wie threads dem nutzer zugewiesen wurden
+    # Diese Bots melden sich schonmal an (muss nur einmal durchgeführt werden und wird in einer Session gespeichert)
+    bots = list()
+    for i in range(thread_num):
+        bot = BibBot(i)
         bot.anmelden(username=user["username"], password=user["password"])
-        free_seats = bot.find_free_seats(
-            jahr=str(year),
-            monat=str(month),
-            tag=str(day),
-            period_param=period)
-        if len(free_seats) > 0:
-            # Defining critical area
-            with lock:
-                platzholder.set(bot.platz_buchen(
-                    free_seats[randint(0, len(free_seats))-1]))
+        bots.append(bot)
+        print("Bibot", bot.index, "was created and finished setting up")
+
+    # Es wird einer der bots genutzt, um alte Buchungen zu löschen
+    bots[0].remove_old_bookings(year, month, day)
+
+    """
+    Methode die Defininiert was im Thread passieren soll
+    """
+    def bot_thread(bot):
+
+        print("Bibot", bot.index, "has started working within a thread")
+
+        # Solange bis von einem der Threads ein Platz bebucht wurde
+        while platzholder.get() == None:
+
+            free_seats = bot.find_free_seats(
+                jahr=str(year),
+                monat=str(month),
+                tag=str(day),
+                period_param=period)
+
+            if len(free_seats) > 0:
+                potentieller_platz = bot.platz_buchen(
+                    free_seats[randint(0, len(free_seats))-1])
+                # Es kann sein dass die Buchung nicht geklappt hat (dann wird Null zurückgegeben)
+                if potentieller_platz != None:
+                    # Defining critical area, dh nur ein thread kann sich in diesem Bereich befinden
+                    # In diesem Thread hat die Buchung geklappt
+                    with lock:
+                        platzholder.set(potentieller_platz)
+                else:
+                    print("Bibot", bot.index,
+                          "Buchung nicht geklappt, fängt jz neu an..")
+        print("Bibot", bot.index, "Ein anderer Thread hat schon gebucht")
+
+    threads = list()
+    for bot in bots:
+        x = threading.Thread(target=bot_thread, args=(bot,))
+        threads.append(x)
+        x.start()
 
     while platzholder.get() == None:
-        if (datetime.today() - time_start).seconds > 150:
+        # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
+        # die für andere gebucht wurden)
+        if(datetime.today() - time_start).seconds > 150:
             for i in range(5):
                 print("=============")
             print("TIME IS UP")
             return
 
-        threads = list()
-        for i in range(thread_num):
-            x = threading.Thread(target=controll_bot, args=(i,))
-            threads.append(x)
-            x.start()
+        time.sleep(0.1)
 
-        for index, thread in enumerate(threads):
-            thread.join()
-            print("Bibot", index, "finished")
+    for thread in threads:
+        thread.join()
 
     print("=================")
     print("Für:", user["name"])
@@ -61,17 +94,11 @@ while True:
 
     # get time now
     now = datetime.today()
-    user_data = json.loads(os.environ.get("login_data", None))
-
-    for user in user_data:
-        multithread_buchen(
-            year=now.year,
-            month=now.month,
-            day=now.day,
-            period=0,
-            user=user,
-            thread_num=MAX_THEAD_COUNT,
-            time_start=datetime.today())
+    try:
+        user_data = json.loads(os.environ.get("login_data", None))
+    except:
+        with open("local_logindata.json", "r") as file:
+            user_data = json.loads(file.read())
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
@@ -79,7 +106,7 @@ while True:
 
         # sleep to next day until 8.28
         start_morgen_nächster_tag = datetime(
-            tomorrow.year, tomorrow.month, tomorrow.day, 8, 28, 0)
+            tomorrow.year, tomorrow.month, tomorrow.day, 8, 27, 0)
 
         diff = (start_morgen_nächster_tag - datetime.today())
         print("sleeping for", diff.seconds, "seconds")
@@ -90,7 +117,7 @@ while True:
                 year=tomorrow.year,
                 month=tomorrow.month,
                 day=tomorrow.day,
-                period=0,
+                period="0",
                 user=user,
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
@@ -99,7 +126,7 @@ while True:
     if(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
         # sleep bis 14.28
         start_nachmittag = datetime(
-            now.year, now.month, now.day, 14, 28, 0)
+            now.year, now.month, now.day, 14, 27, 0)
 
         diff = (start_nachmittag - datetime.today())
         print("sleeping for", diff.seconds, "seconds")
@@ -109,7 +136,7 @@ while True:
                 year=now.year,
                 month=now.month,
                 day=now.day,
-                period=1,
+                period="1",
                 user=user,
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
