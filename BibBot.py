@@ -28,6 +28,15 @@ class BibBot:
         e = url.find("&", s)
         return url[s:e]
 
+    def extract_form_params(self, soup, form_id):
+        params = dict()
+        for inpu in soup.find("form", {"id": form_id}).find_all("input"):
+            try:
+                params[inpu["name"]] = inpu["value"]
+            except:
+                pass
+        return params
+
     def anmelden(self, username, password):
         anmelde_url = self.build_url(endpoint="admin")
         content_anmeldung = {
@@ -92,12 +101,10 @@ class BibBot:
 
         platz_resp = self.session.get(platz_url).content.decode("utf-8")
         soup = BeautifulSoup(platz_resp, "html.parser")
-        content_speichern = dict()
-        for inpu in soup.find("form", {"id": "main"}).find_all("input", {"type": "hidden"}):
-            content_speichern[inpu["name"]] = inpu["value"]
 
+        speichern_params = self.extract_form_params(soup=soup, form_id="main")
         buchung_abschicken = self.session.post(
-            speicher_url, data=content_speichern).content.decode("utf-8")
+            speicher_url, data=speichern_params).content.decode("utf-8")
 
         # Validieren ob für die gewünschte Periode ein Platz gebucht wurde
         soup = BeautifulSoup(buchung_abschicken, "html.parser")
@@ -112,5 +119,13 @@ class BibBot:
         print("Bibot", self.index, "Fehler bei Buchung")
         return None
 
-    def remove_old_bookings(self, year, month, day):
+    def remove_old_bookings(self, year, month, day, period):
+        """
+        Die schwierigkeit ist, dass man die buchungsid zum löschen braucht.
+        Die buchungsübersicht kann nicht genutzt werden, weil da javascript benötigt wird.
+
+        Ansatz:
+        Man merkt sich alle gebuchten
+        Und geht dann für alle auf die Übersichtsseite, wählt dort den Eintrag und dann löschen
+        """
         pass

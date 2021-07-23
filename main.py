@@ -11,6 +11,8 @@ import json
 
 MAX_THEAD_COUNT = 8
 
+booked_seats = list()
+
 
 def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     """
@@ -31,7 +33,7 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
         print("Bibot", bot.index, "was created and finished setting up")
 
     # Es wird einer der bots genutzt, um alte Buchungen zu löschen
-    bots[0].remove_old_bookings(year, month, day)
+    bots[0].remove_old_bookings(year, month, day, period)
 
     """
     Methode die Defininiert was im Thread passieren soll
@@ -86,6 +88,7 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     print("=================")
     print("Für:", user["name"])
     d = platzholder.get()
+
     for key in d:
         print(key, d[key])
 
@@ -94,6 +97,8 @@ while True:
 
     # get time now
     now = datetime.today()
+    now = datetime(
+        now.year, now.month, now.day, 14, 27, 0)
     try:
         user_data = json.loads(os.environ.get("login_data", None))
     except:
