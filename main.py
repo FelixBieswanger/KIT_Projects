@@ -97,8 +97,6 @@ while True:
 
     # get time now
     now = datetime.today()
-    now = datetime(
-        now.year, now.month, now.day, 14, 27, 0)
     try:
         user_data = json.loads(os.environ.get("login_data", None))
     except:
