@@ -57,6 +57,10 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
 
 while True:
 
+    # get time now
+    now = datetime.today()
+    user_data = json.loads(os.environ.get("login_data", None))
+
     for user in user_data:
         multithread_buchen(
             year=tomorrow.year,
@@ -66,10 +70,6 @@ while True:
             user=user,
             thread_num=MAX_THEAD_COUNT,
             time_start=datetime.today())
-
-    # get time now
-    now = datetime.today()
-    user_data = json.loads(os.environ.get("login_data", None))
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
