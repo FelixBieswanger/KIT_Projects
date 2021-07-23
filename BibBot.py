@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 class BibBot:
-    def __init__(self, index, platzholder, lock):
+    def __init__(self, index):
         # Meta Data
         self.session = requests.Session()
         self.base_url = "https://raumbuchung.bibliothek.kit.edu/sitzplatzreservierung/"
@@ -18,8 +18,6 @@ class BibBot:
         }
         self.zeiten = ["vormittags", "nachmittags", "abends"]
         self.index = index
-        self.platzholder = platzholder
-        self.lock = lock
         print("Bibot", self.index, "has started")
 
     def build_url(self, endpoint, **kwargs):
@@ -99,23 +97,18 @@ class BibBot:
         for inpu in soup.find("form", {"id": "main"}).find_all("input", {"type": "hidden"}):
             content_speichern[inpu["name"]] = inpu["value"]
 
-        # Defining critical area
-        with self.lock:
-            # Nur buchen, wenn von den anderen Threads noch kein Platz gefunden wurde
-            if self.platzholder.get() == None:
+        buchung_abschicken = self.session.post(
+            speicher_url, data=content_speichern).content.decode("utf-8")
 
-                buchung_abschicken = self.session.post(
-                    speicher_url, data=content_speichern).content.decode("utf-8")
+        # Validieren ob für die gewünschte Periode ein Platz gebucht wurde
+        soup = BeautifulSoup(buchung_abschicken, "html.parser")
+        for td in soup.find_all("td", {"class": "K writable"}):
+            # Nur zurückgeben, wenn tatsächlich gebucht wurde
+            if str(self.zeiten.index(td.find("a")["title"])) == platz["period"]:
+                print("Bibot", self.index, "Platz erfolgreich gebucht")
+                return platz
 
-                # Validieren ob für die gewünschte Periode ein Platz gebucht wurde
-                soup = BeautifulSoup(buchung_abschicken, "html.parser")
-                for td in soup.find_all("td", {"class": "K writable"}):
-                    # Nur zurückgeben, wenn tatsächlich gebucht wurde
-                    if str(self.zeiten.index(td.find("a")["title"])) == platz["period"]:
-                        print("Bibot", self.index, "Platz erfolgreich gebucht")
-                        return platz
-
-                # Warsch wurde inzwichen zeit der platz belegt, sodass eine Buchung
-                # nicht mehr möglich war. None wird zurückgeben
-                print("Bibot", self.index, "Fehler bei Buchung")
-                return None
+        # Warsch wurde inzwichen zeit der platz belegt, sodass eine Buchung
+        # nicht mehr möglich war. None wird zurückgeben
+        print("Bibot", self.index, "Fehler bei Buchung")
+        return None

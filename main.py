@@ -20,7 +20,7 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
         if platzholder.get() != None:
             return
 
-        bot = BibBot(index, platzholder, lock)
+        bot = BibBot(index)
         bot.anmelden(username=user["username"], password=user["password"])
         free_seats = bot.find_free_seats(
             jahr=str(year),
@@ -28,8 +28,10 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
             tag=str(day),
             period_param=period)
         if len(free_seats) > 0:
-            platzholder.set(bot.platz_buchen(
-                free_seats[randint(0, len(free_seats))-1]))
+            # Defining critical area
+            with lock:
+                platzholder.set(bot.platz_buchen(
+                    free_seats[randint(0, len(free_seats))-1]))
 
     while platzholder.get() == None:
         if (datetime.today() - time_start).seconds > 150:
