@@ -63,9 +63,9 @@ while True:
 
     for user in user_data:
         multithread_buchen(
-            year=tomorrow.year,
-            month=tomorrow.month,
-            day=tomorrow.day,
+            year=now.year,
+            month=now.month,
+            day=now.day,
             period=0,
             user=user,
             thread_num=MAX_THEAD_COUNT,
