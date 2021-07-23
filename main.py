@@ -57,6 +57,16 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
 
 while True:
 
+    for user in user_data:
+        multithread_buchen(
+            year=tomorrow.year,
+            month=tomorrow.month,
+            day=tomorrow.day,
+            period=0,
+            user=user,
+            thread_num=MAX_THEAD_COUNT,
+            time_start=datetime.today())
+
     # get time now
     now = datetime.today()
     user_data = json.loads(os.environ.get("login_data", None))
@@ -79,6 +89,7 @@ while True:
                 month=tomorrow.month,
                 day=tomorrow.day,
                 period=0,
+                user=user,
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
 
@@ -97,5 +108,6 @@ while True:
                 month=now.month,
                 day=now.day,
                 period=1,
+                user=user,
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
