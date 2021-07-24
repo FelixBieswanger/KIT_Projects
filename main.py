@@ -60,13 +60,13 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
                     # In diesem Thread hat die Buchung geklappt
                     with lock:
                         platzholder.set(potentieller_platz)
+                        print("Bibot", bot.index,
+                              "hat gebucht und fährt nun runter..")
+                        return
                 else:
                     if platzholder.get() == None:
                         print("Bibot", bot.index,
                               "Buchung nicht geklappt, fängt jz neu an..")
-                    else:
-                        print("Bibot", bot.index,
-                              "Ein anderer Thread hat schon gebucht")
 
     threads = list()
     for bot in bots:
@@ -108,16 +108,6 @@ while True:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
 
-    for user in user_data:
-        multithread_buchen(
-            year="2021",
-            month="07",
-            day="23",
-            period="1",
-            user=user,
-            thread_num=MAX_THEAD_COUNT,
-            time_start=datetime.today())
-
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         tomorrow = now + dt.timedelta(days=1)
@@ -126,7 +116,7 @@ while True:
         start_morgen_nächster_tag = datetime(
             tomorrow.year, tomorrow.month, tomorrow.day, 8, 27, 0)
 
-        diff = (start_morgen_nächster_tag - datetime.today())
+        diff = (start_morgen_nächster_tag - now)
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
@@ -146,7 +136,7 @@ while True:
         start_nachmittag = datetime(
             now.year, now.month, now.day, 14, 27, 0)
 
-        diff = (start_nachmittag - datetime.today())
+        diff = (start_nachmittag - now)
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
         for user in user_data:
