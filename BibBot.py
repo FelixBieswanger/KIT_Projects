@@ -49,16 +49,60 @@ class BibBot:
         logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
         self.bib_id = self.extract_param(logon_url, "creatormatch")
 
+    def find_booked_seat(self, jahr, monat, tag, period_param):
+
+        for area in self.area_prio:
+            # URL Bauen und Request für Belegung der Etage an Server schicken
+            scan_url = self.build_url(
+                endpoint="day", year=jahr, month=monat, day=tag, area=area)
+            resp = self.session.get(scan_url).content.decode("utf-8")
+
+            # Alle Freien Plätze extrahieren
+            soup = BeautifulSoup(resp, "html.parser")
+
+            for td in soup.find_all("td", {"class": "K writable"}):
+                a_tag = td.find("a")
+                if str(self.zeiten.index(a_tag["title"])) == str(period_param):
+                    buchungs_id = self.extract_param(
+                        url=a_tag["href"], param="id")
+
+                    buchungs_info_url = self.build_url(
+                        endpoint="view_entry", id=buchungs_id, area=area, day=tag, month=monat, year=jahr)
+                    print(buchungs_info_url)
+                    buchungs_info = self.session.get(
+                        buchungs_info_url).content.decode("utf-8")
+                    soup2 = BeautifulSoup(buchungs_info, "html.parser")
+
+                    table = soup2.find("tbody")
+                    for tr in table.find_all("tr"):
+                        tds = [td.text for td in tr.find_all("td")]
+                        if tds[0] == "Sitzplatz:":
+                            platz_str = [s.strip()
+                                         for s in tds[1].split(" - ")]
+                            return {
+                                "area": area,
+                                "area_name": platz_str[0],
+                                "period": period_param,
+                                "period_name": self.zeiten[int(period_param)],
+                                "room": platz_str[1],
+                                "year": jahr,
+                                "month": monat,
+                                "day": tag
+                            }
+
+        return None
+
     def find_free_seats(self, jahr, monat, tag, period_param):
         # Scannen aller Etagen in der definierten Reihenfolge
         for area in self.area_prio:
             # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
-            resp = requests.get(scan_url)
+            resp = requests.get(scan_url).content.decode("utf-8")
 
             # Alle Freien Plätze extrahieren
-            sitzplätze_html = BeautifulSoup(resp.content, "html.parser")
+            sitzplätze_html = BeautifulSoup(
+                resp, "html.parser")
             sitzplätze_tags = sitzplätze_html.find_all("td", {"class": "new"})
             free_seats_url = [tag.find("a")["href"] for tag in sitzplätze_tags]
 
