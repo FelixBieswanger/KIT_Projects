@@ -61,9 +61,12 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
                     with lock:
                         platzholder.set(potentieller_platz)
                 else:
-                    print("Bibot", bot.index,
-                          "Buchung nicht geklappt, fängt jz neu an..")
-        print("Bibot", bot.index, "Ein anderer Thread hat schon gebucht")
+                    if platzholder.get() == None:
+                        print("Bibot", bot.index,
+                              "Buchung nicht geklappt, fängt jz neu an..")
+                    else:
+                        print("Bibot", bot.index,
+                              "Ein anderer Thread hat schon gebucht")
 
     threads = list()
     for bot in bots:
@@ -75,22 +78,24 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
         # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
         # die für andere gebucht wurden)
         if(datetime.today() - time_start).seconds > 150:
-            for i in range(5):
-                print("=============")
-            print("TIME IS UP")
-            return
-
-        time.sleep(0.1)
+            platzholder.set("Stop Threads")
+            break
+        time.sleep(1)
 
     for thread in threads:
         thread.join()
 
-    print("=================")
-    print("Für:", user["name"])
-    d = platzholder.get()
+    if type(platzholder.get()) == dict:
+        print("=================")
+        print("Für:", user["name"])
+        d = platzholder.get()
 
-    for key in d:
-        print(key, d[key])
+        for key in d:
+            print(key, d[key])
+    else:
+        for i in range(5):
+            print("=============")
+        print("TIME IS UP")
 
 
 while True:
@@ -102,6 +107,16 @@ while True:
     except:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
+
+    for user in user_data:
+        multithread_buchen(
+            year="2021",
+            month="07",
+            day="23",
+            period="1",
+            user=user,
+            thread_num=MAX_THEAD_COUNT,
+            time_start=datetime.today())
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:

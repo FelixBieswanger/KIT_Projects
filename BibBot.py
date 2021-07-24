@@ -30,11 +30,8 @@ class BibBot:
 
     def extract_form_params(self, soup, form_id):
         params = dict()
-        for inpu in soup.find("form", {"id": form_id}).find_all("input"):
-            try:
-                params[inpu["name"]] = inpu["value"]
-            except:
-                pass
+        for inpu in soup.find("form", {"id": form_id}).find_all("input", {"type": "hidden"}):
+            params[inpu["name"]] = inpu["value"]
         return params
 
     def anmelden(self, username, password):
@@ -95,8 +92,7 @@ class BibBot:
                                    room=platz["room"],
                                    year=platz["year"],
                                    month=platz["month"],
-                                   day=platz["day"]
-                                   )
+                                   day=platz["day"])
         speicher_url = self.build_url(endpoint="edit_entry_handler")
 
         platz_resp = self.session.get(platz_url).content.decode("utf-8")
