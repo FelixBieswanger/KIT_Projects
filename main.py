@@ -32,9 +32,6 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
         bots.append(bot)
         print("Bibot", bot.index, "was created and finished setting up")
 
-    # Es wird einer der bots genutzt, um alte Buchungen zu löschen
-    bots[0].remove_old_bookings(year, month, day, period)
-
     """
     Methode die Defininiert was im Thread passieren soll
     """
@@ -108,13 +105,23 @@ while True:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
 
+    for user in user_data:
+        multithread_buchen(
+            year=now.year,
+            month=now.month,
+            day=now.day,
+            period="2",
+            user=user,
+            thread_num=MAX_THEAD_COUNT,
+            time_start=datetime.today())
+
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         tomorrow = now + dt.timedelta(days=1)
 
         # sleep to next day until 8.28
         start_morgen_nächster_tag = datetime(
-            tomorrow.year, tomorrow.month, tomorrow.day, 8, 27, 0)
+            tomorrow.year, tomorrow.month, tomorrow.day, 8, 28, 0)
 
         diff = (start_morgen_nächster_tag - now)
         print("sleeping for", diff.seconds, "seconds")
@@ -134,7 +141,7 @@ while True:
     if(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
         # sleep bis 14.28
         start_nachmittag = datetime(
-            now.year, now.month, now.day, 14, 27, 0)
+            now.year, now.month, now.day, 14, 28, 0)
 
         diff = (start_nachmittag - now)
         print("sleeping for", diff.seconds, "seconds")

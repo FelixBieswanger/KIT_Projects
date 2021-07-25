@@ -104,7 +104,8 @@ class BibBot:
             sitzplätze_html = BeautifulSoup(
                 resp, "html.parser")
             sitzplätze_tags = sitzplätze_html.find_all("td", {"class": "new"})
-            free_seats_url = [tag.find("a")["href"] for tag in sitzplätze_tags]
+            free_seats_url = [stag.find("a")["href"]
+                              for stag in sitzplätze_tags]
 
             # Wenn der freie Platz für den gewüschten Zeitslot frei ist, der
             # liste von freien Plätzen der Etage hinzufügen
