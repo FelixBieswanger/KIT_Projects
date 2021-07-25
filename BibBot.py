@@ -158,14 +158,3 @@ class BibBot:
         # nicht mehr möglich war. None wird zurückgeben
         print("Bibot", self.index, "Fehler bei Buchung")
         return None
-
-    def remove_old_bookings(self, year, month, day, period):
-        """
-        Die schwierigkeit ist, dass man die buchungsid zum löschen braucht.
-        Die buchungsübersicht kann nicht genutzt werden, weil da javascript benötigt wird.
-
-        Ansatz:
-        Man merkt sich alle gebuchten
-        Und geht dann für alle auf die Übersichtsseite, wählt dort den Eintrag und dann löschen
-        """
-        pass
