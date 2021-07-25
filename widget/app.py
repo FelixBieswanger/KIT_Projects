@@ -15,10 +15,10 @@ except:
 
 @app.route('/getplatz', methods=["GET"])
 def get():
-    user = request.args.get('username')
+    username = request.args.get('username')
 
-    if user in login_data.keys():
-        return DataManager.getPlatz(user=user)
+    if username in login_data.keys():
+        return DataManager.getPlatz(username=username)
     else:
         return {}
 
