@@ -17,23 +17,6 @@ booked_seats = list()
 
 def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     """
-    SET UP (Static Part)
-    Der Prozess wird allerdings 3min vor start der Buchungsphase gestatet, sodass Setup bereits durchgeführt werden kann
-    """
-
-    platzholder = Platzholder()
-    lock = threading.Lock()
-
-    # Es werden so viele bots erstellt wie threads dem nutzer zugewiesen wurden
-    # Diese Bots melden sich schonmal an (muss nur einmal durchgeführt werden und wird in einer Session gespeichert)
-    bots = list()
-    for i in range(thread_num):
-        bot = BibBot(i)
-        bot.anmelden(username=user["username"], password=user["password"])
-        bots.append(bot)
-        print("Bibot", bot.index, "was created and finished setting up")
-
-    """
     Methode die Defininiert was im Thread passieren soll
     """
     def bot_thread(bot):
@@ -65,12 +48,35 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
                     if platzholder.get() == None:
                         print("Bibot", bot.index,
                               "Buchung nicht geklappt, fängt jz neu an..")
+    """
+    SET UP (Static Part)
+    Der Prozess wird allerdings 3min vor start der Buchungsphase gestatet, sodass Setup bereits durchgeführt werden kann
+    """
 
+    platzholder = Platzholder()
+    lock = threading.Lock()
+
+    # Es werden so viele bots erstellt wie threads dem nutzer zugewiesen wurden
+    # Diese Bots melden sich schonmal an (muss nur einmal durchgeführt werden und wird in einer Session gespeichert)
+    bots = list()
     threads = list()
-    for bot in bots:
-        x = threading.Thread(target=bot_thread, args=(bot,))
-        threads.append(x)
-        x.start()
+    for i in range(thread_num):
+        bot = BibBot(i)
+        bot.anmelden(username=user["username"], password=user["password"])
+        bots.append(bot)
+        threads.append(threading.Thread(target=bot_thread, args=(bot,)))
+        print("Bibot", bot.index,
+              "was created and finished setting up for user", user["name"])
+
+    # Starte es um 30 nach, weil wenn davor (also 28 o 29) ein PLatz gebucht wird, wird dieser um 30 wieder gelöscht
+    print("Waiting until its time to go...")
+    while datetime.today().minute != 30:
+        time.sleep(1)
+
+    print("Starting "+thread_num+" threads for user", user["name"])
+    # Start all thread
+    for thread in threads:
+        thread.start()
 
     while platzholder.get() == None:
         # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
