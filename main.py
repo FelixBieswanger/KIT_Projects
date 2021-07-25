@@ -75,7 +75,7 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     while platzholder.get() == None:
         # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
         # die für andere gebucht wurden)
-        if(datetime.today() - time_start).seconds > 20:
+        if(datetime.today() - time_start).seconds > 150:
             platzholder.set("Stop Threads")
             break
         time.sleep(1)
@@ -125,16 +125,6 @@ while True:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
 
-    for user in user_data.values():
-        multithread_buchen(
-            year=now.year,
-            month=now.month,
-            day=26,
-            period="0",
-            user=dict(user),
-            thread_num=MAX_THEAD_COUNT,
-            time_start=datetime.today())
-
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         tomorrow = now + dt.timedelta(days=1)
@@ -142,6 +132,8 @@ while True:
         # sleep to next day until 8.28
         start_morgen_nächster_tag = datetime(
             tomorrow.year, tomorrow.month, tomorrow.day, 8, 28, 0)
+
+        print("wait until", start_morgen_nächster_tag)
 
         diff = (start_morgen_nächster_tag - now)
         print("sleeping for", diff.seconds, "seconds")
@@ -162,6 +154,8 @@ while True:
         # sleep bis 14.28
         start_nachmittag = datetime(
             now.year, now.month, now.day, 14, 28, 0)
+
+        print("wait until", start_nachmittag)
 
         diff = (start_nachmittag - now)
         print("sleeping for", diff.seconds, "seconds")
