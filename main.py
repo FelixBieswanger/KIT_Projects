@@ -39,8 +39,6 @@ while True:
     # get time now
     now = datetime.today()
 
-    start_booking(datetime.today(), period="0")
-
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         tomorrow = now + dt.timedelta(days=1)
