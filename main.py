@@ -30,7 +30,7 @@ def start_booking(date, period):
             day=date.day,
             period=period)
 
-        platz = booker.multithread_buchen(debug=True)
+        platz = booker.multithread_buchen(debug=False)
         DataManager.setPlatz(username=user["username"], data=platz)
 
 
