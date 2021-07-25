@@ -117,13 +117,13 @@ while True:
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        for user in user_data:
+        for user in user_data.values():
             multithread_buchen(
                 year=tomorrow.year,
                 month=tomorrow.month,
                 day=tomorrow.day,
                 period="0",
-                user=user,
+                user=dict(user),
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
 
@@ -136,12 +136,12 @@ while True:
         diff = (start_nachmittag - now)
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
-        for user in user_data:
+        for user in user_data.values():
             multithread_buchen(
                 year=now.year,
                 month=now.month,
                 day=now.day,
                 period="1",
-                user=user,
+                user=dict(user),
                 thread_num=MAX_THEAD_COUNT,
                 time_start=datetime.today())
