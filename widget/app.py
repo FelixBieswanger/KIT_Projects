@@ -13,14 +13,7 @@ except:
         login_data = json.loads(file.read())
 
 
-db = {
-    "@2374109": {
-        "ab": "14 oder 14:30",
-        "area_name": "2. OG Altbau",
-        "platz": "A420",
-        "lastupdate": ""
-    }
-}
+db = dict()
 
 
 @app.route("/setplatz", methods=["POST"])
@@ -39,6 +32,8 @@ def set():
 
 @app.route('/getplatz', methods=["GET"])
 def get():
+    print(db)
+
     user = request.args.get('username')
 
     if user in db:

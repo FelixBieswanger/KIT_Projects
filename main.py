@@ -3,13 +3,14 @@ from Platzholder import Platzholder
 from random import randint
 import threading
 import multiprocessing
-from datetime import datetime
+from datetime import date, datetime
 import datetime as dt
 import time
 import os
 import json
+import requests
 
-MAX_THEAD_COUNT = 8
+MAX_THEAD_COUNT = multiprocessing.cpu_count()
 
 booked_seats = list()
 
@@ -74,7 +75,7 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     while platzholder.get() == None:
         # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
         # die für andere gebucht wurden)
-        if(datetime.today() - time_start).seconds > 150:
+        if(datetime.today() - time_start).seconds > 20:
             platzholder.set("Stop Threads")
             break
         time.sleep(1)
@@ -82,17 +83,36 @@ def multithread_buchen(year, month, day, period, user, thread_num, time_start):
     for thread in threads:
         thread.join()
 
+    send_platz_data = dict()
     if type(platzholder.get()) == dict:
         print("=================")
         print("Für:", user["name"])
-        d = platzholder.get()
 
-        for key in d:
-            print(key, d[key])
+        booked_platz = bots[0].find_booked_seat(
+            jahr=str(year), monat=str(month), tag=str(day), period_param=period)
+
+        booked_platz["area_name"] = booked_platz["area_name"].replace(
+            "KIT-BIB", "")
+
+        send_platz_data = booked_platz
+        for key in booked_platz:
+            print(key, booked_platz[key])
+
     else:
         for i in range(5):
             print("=============")
         print("TIME IS UP")
+
+        send_platz_data = {
+            "area_name": "",
+            "room": "KEINEN BEKOMMEN"
+        }
+
+    send_platz_data["when"] = time_start.strftime(
+        '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
+    requests.post("https://kit-bib-botv1.herokuapp.com/setplatz?username="+user["username"]+"&password="+user["password"],
+                  headers={'Content-Type':  'application/json'},
+                  data=json.dumps(send_platz_data))
 
 
 while True:
@@ -104,6 +124,16 @@ while True:
     except:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
+
+    for user in user_data.values():
+        multithread_buchen(
+            year=now.year,
+            month=now.month,
+            day=26,
+            period="0",
+            user=dict(user),
+            thread_num=MAX_THEAD_COUNT,
+            time_start=datetime.today())
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:

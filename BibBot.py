@@ -68,7 +68,7 @@ class BibBot:
 
                     buchungs_info_url = self.build_url(
                         endpoint="view_entry", id=buchungs_id, area=area, day=tag, month=monat, year=jahr)
-                    print(buchungs_info_url)
+
                     buchungs_info = self.session.get(
                         buchungs_info_url).content.decode("utf-8")
                     soup2 = BeautifulSoup(buchungs_info, "html.parser")
