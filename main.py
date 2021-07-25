@@ -105,6 +105,16 @@ while True:
         with open("local_logindata.json", "r") as file:
             user_data = json.loads(file.read())
 
+    for user in user_data:
+        multithread_buchen(
+            year=now.year,
+            month=now.month,
+            day=now.day,
+            period="2",
+            user=user,
+            thread_num=MAX_THEAD_COUNT,
+            time_start=datetime.today())
+
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         tomorrow = now + dt.timedelta(days=1)
