@@ -1,2 +1,2 @@
 worker: python main.py
-web: gunicorn widget/wsgi:app
+web: gunicorn --pythonpath widget wsgi:app
