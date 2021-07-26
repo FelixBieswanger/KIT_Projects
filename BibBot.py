@@ -8,7 +8,7 @@ class BibBot:
         # Meta Data
         self.session = requests.Session()
         self.base_url = "https://raumbuchung.bibliothek.kit.edu/sitzplatzreservierung/"
-        self.area_prio = ["34", "35", "21", "19", "20"]
+        self.area_prio = ["34", "35", "21", "19", "20", "29", "28"]
         self.area_names = {
             "35": "altbau 2.OG (empore)",
             "34": "altbau 2.OG",
