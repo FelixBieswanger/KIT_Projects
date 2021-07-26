@@ -27,14 +27,14 @@ def get():
         bot.anmelden(username=username, password=pw)
         now = datetime.today()
 
-        period = 0
+        period = "0"
         if now.hour > 12:
-            period = 1
+            period = "1"
 
         booked_platz = bot.find_booked_seat(
-            jahr=now.year,
-            monat=now.month,
-            tag=now.day,
+            jahr=str(now.year),
+            monat=str(now.month),
+            tag=str(now.day),
             period_param=period
         )
 
