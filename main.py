@@ -22,7 +22,7 @@ def start_booking(date, period):
     bookers = list()
     for user in user_data.values():
         booker = Booker(
-            thread_num=MAX_THEAD_COUNT,
+            thread_num=2,
             user=user,
             year=date.year,
             month=date.month,
@@ -35,9 +35,9 @@ def start_booking(date, period):
 while True:
 
     # get time now
-    now = datetime.today()
+    now = datetime.today() - dt.timedelta(days=1)
 
-    start_booking(now, period="0")
+    start_booking(now, period="1")
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:

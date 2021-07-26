@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 
 
 class BibBot:
+    area_prio = ["34", "35", "21", "19", "20", "29", "28"]
+
     def __init__(self, index=0):
         # Meta Data
         self.session = requests.Session()
@@ -14,7 +16,9 @@ class BibBot:
             "34": "altbau 2.OG",
             "21": "neubau 3.OG",
             "19": "neubau 2.OG",
-            "20": "neubau 1.OG"
+            "20": "neubau 1.OG",
+            "29": "HS Ost",
+            "28": "HS West"
         }
         self.zeiten = ["vormittags", "nachmittags", "abends"]
         self.index = index
@@ -92,40 +96,39 @@ class BibBot:
 
         return None
 
-    def find_free_seats(self, jahr, monat, tag, period_param):
-        # Scannen aller Etagen in der definierten Reihenfolge
-        for area in self.area_prio:
-            # URL Bauen und Request für Belegung der Etage an Server schicken
-            scan_url = self.build_url(
-                endpoint="day", year=jahr, month=monat, day=tag, area=area)
-            resp = requests.get(scan_url).content.decode("utf-8")
+    def find_free_seats(self, jahr, monat, tag, period_param, area):
 
-            # Alle Freien Plätze extrahieren
-            sitzplätze_html = BeautifulSoup(
-                resp, "html.parser")
-            sitzplätze_tags = sitzplätze_html.find_all("td", {"class": "new"})
-            free_seats_url = [stag.find("a")["href"]
-                              for stag in sitzplätze_tags]
+        # URL Bauen und Request für Belegung der Etage an Server schicken
+        scan_url = self.build_url(
+            endpoint="day", year=jahr, month=monat, day=tag, area=area)
+        resp = requests.get(scan_url).content.decode("utf-8")
 
-            # Wenn der freie Platz für den gewüschten Zeitslot frei ist, der
-            # liste von freien Plätzen der Etage hinzufügen
-            plätze_in_area = list()
-            for url in free_seats_url:
-                if self.extract_param(url, "period") == str(period_param):
-                    # Platz-Struktur bauen (für die Buchung)
-                    plätze_in_area.append({
-                        "area": area,
-                        "area_name": self.area_names[area],
-                        "period": period_param,
-                        "period_name": self.zeiten[int(period_param)],
-                        "room": self.extract_param(url, "room"),
-                        "year": jahr,
-                        "month": monat,
-                        "day": tag
-                    })
-            # Wenn größer gleich 1 Plätze gefunden wurden, zurückgeben
-            if len(plätze_in_area) != 0:
-                return plätze_in_area
+        # Alle Freien Plätze extrahieren
+        sitzplätze_html = BeautifulSoup(
+            resp, "html.parser")
+        sitzplätze_tags = sitzplätze_html.find_all("td", {"class": "new"})
+        free_seats_url = [stag.find("a")["href"]
+                          for stag in sitzplätze_tags]
+
+        # Wenn der freie Platz für den gewüschten Zeitslot frei ist, der
+        # liste von freien Plätzen der Etage hinzufügen
+        plätze_in_area = list()
+        for url in free_seats_url:
+            if self.extract_param(url, "period") == str(period_param):
+                # Platz-Struktur bauen (für die Buchung)
+                plätze_in_area.append({
+                    "area": area,
+                    "area_name": self.area_names[area],
+                    "period": period_param,
+                    "period_name": self.zeiten[int(period_param)],
+                    "room": self.extract_param(url, "room"),
+                    "year": jahr,
+                    "month": monat,
+                    "day": tag
+                })
+        # Wenn größer gleich 1 Plätze gefunden wurden, zurückgeben
+        if len(plätze_in_area) != 0:
+            return plätze_in_area
         # Wenn für keine der Etagen ein Plätz gefunden wurde, leere liste zurückgeben
         print("Bibot", self.index, "KEINE PLÄTZE")
         return []
@@ -139,7 +142,6 @@ class BibBot:
                                    month=platz["month"],
                                    day=platz["day"])
         speicher_url = self.build_url(endpoint="edit_entry_handler")
-
         platz_resp = self.session.get(platz_url).content.decode("utf-8")
         soup = BeautifulSoup(platz_resp, "html.parser")
 

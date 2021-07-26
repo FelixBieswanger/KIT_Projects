@@ -11,7 +11,6 @@ class Booker:
     def __init__(self, thread_num, user, year, month, day, period):
         self.thread_num = thread_num
         self.platzholder = Platzholder()
-        self.lock = threading.Lock()
         self.user = user
         self.year = str(year)
         self.month = str(month)
@@ -39,32 +38,57 @@ class Booker:
     def bot_thread(self, bot):
 
         print("Bibot", bot.index, "has started working within a thread")
+        thread_tryed_seats = list()
 
         # Solange bis von einem der Threads ein Platz bebucht wurde
-        while self.platzholder.get() == None:
+        while not self.platzholder.get_threds_stop():
 
-            free_seats = bot.find_free_seats(
-                jahr=self.year,
-                monat=self.month,
-                tag=self.day,
-                period_param=self.period)
+            if self.platzholder.get_available_seat_count() == 0:
+                area = bot.area_prio[bot.index % len(bot.area_prio)]
 
-            if len(free_seats) > 0:
-                potentieller_platz = bot.platz_buchen(
-                    free_seats[randint(0, len(free_seats))-1])
+                free_seats = bot.find_free_seats(
+                    jahr=self.year,
+                    monat=self.month,
+                    tag=self.day,
+                    period_param=self.period,
+                    area=area)
+
+                for seat in free_seats:
+                    self.platzholder.add_seat(seat)
+
+            plätze_noch_nicht_versucht = self.platzholder.get_seats()
+            for seat in thread_tryed_seats:
+                if seat in plätze_noch_nicht_versucht:
+                    plätze_noch_nicht_versucht.remove(seat)
+
+            if len(plätze_noch_nicht_versucht) > 0:
+                # pick platz
+                platz_buchungs_versuch = None
+                for area in BibBot.area_prio:
+                    if platz_buchungs_versuch is None:
+                        for seat in plätze_noch_nicht_versucht:
+                            if seat["area"] == area:
+                                platz_buchungs_versuch = seat
+                                break
+
+                potentieller_platz = bot.platz_buchen(platz_buchungs_versuch)
                 # Es kann sein dass die Buchung nicht geklappt hat (dann wird Null zurückgegeben)
                 if potentieller_platz != None:
                     # Defining critical area, dh nur ein thread kann sich in diesem Bereich befinden
                     # In diesem Thread hat die Buchung geklappt
-                    with self.lock:
-                        self.platzholder.set(potentieller_platz)
-                        print("Bibot", bot.index,
-                              "hat gebucht und fährt nun runter..")
-                        return
+
+                    self.platzholder.set(potentieller_platz)
+                    print("Bibot", bot.index,
+                          "hat gebucht und fährt nun runter..")
+                    self.platzholder.set_threads_stop()
+                    return
                 else:
                     if self.platzholder.get() == None:
                         print("Bibot", bot.index,
                               "Buchung nicht geklappt, fängt jz neu an..")
+
+            else:
+                print("Bibot", bot.index, "hat schon alle Plätze versucht")
 
     def multithread_buchen(self, time_start=datetime.today(), debug=False):
 
@@ -99,7 +123,7 @@ class Booker:
             # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
             # die für andere gebucht wurden)
             if(datetime.today() - time_start).seconds > 150:
-                self.platzholder.set("Stop Threads")
+                self.platzholder.set_threads_stop()
                 break
             time.sleep(1)
 
