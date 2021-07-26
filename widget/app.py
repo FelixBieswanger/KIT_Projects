@@ -28,7 +28,7 @@ def get():
         now = datetime.today()
 
         period = "0"
-        if now.hour > 12:
+        if now.hour >= 12:
             period = "1"
 
         booked_platz = bot.find_booked_seat(
@@ -47,11 +47,15 @@ def get():
                     '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
             }
         else:
+
             booked_platz["area_name"] = booked_platz["area_name"].replace(
                 "KIT-BIB", "")
             booked_platz["bisHalb"] = False
             booked_platz["when"] = now.strftime(
                 '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
+
+            if period == "1" and now.hour >= 12:
+                booked_platz["when"] += "ab 14h!"
 
             return booked_platz
     else:
