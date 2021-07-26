@@ -66,7 +66,7 @@ class BibBot:
 
             for td in soup.find_all("td", {"class": "K writable"}):
                 a_tag = td.find("a")
-                if str(self.zeiten.index(a_tag["title"])) == str(period_param):
+                if str(self.zeiten.index(a_tag["title"].split(" ")[0])) == str(period_param):
                     buchungs_id = self.extract_param(
                         url=a_tag["href"], param="id")
 
