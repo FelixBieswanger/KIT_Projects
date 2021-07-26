@@ -2,7 +2,11 @@ from flask import Flask
 from flask import request
 import os
 import json
-from DataManager import DataManager
+from BibBot import BibBot
+from datetime import datetime
+
+bot = BibBot()
+
 
 app = Flask(__name__)
 
@@ -18,7 +22,38 @@ def get():
     username = request.args.get('username')
 
     if username in login_data.keys():
-        return DataManager.getPlatz(username=username)
+        pw = login_data[username]["password"]
+
+        bot.anmelden(username=username, password=pw)
+        now = datetime.today()
+
+        period = 0
+        if now.hour > 12:
+            period = 1
+
+        booked_platz = bot.find_booked_seat(
+            jahr=now.year,
+            monat=now.month,
+            tag=now.day,
+            period_param=period
+        )
+
+        if booked_platz is None:
+            return {
+                "area_name": "",
+                "room": "KEINEN BEKOMMEN",
+                "bisHalb": False,
+                "when": now.strftime(
+                    '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
+            }
+        else:
+            booked_platz["area_name"] = booked_platz["area_name"].replace(
+                "KIT-BIB", "")
+            booked_platz["bisHalb"] = False
+            booked_platz["when"] = now.strftime(
+                '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
+
+            return booked_platz
     else:
         return {}
 

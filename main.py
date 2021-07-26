@@ -6,7 +6,6 @@ import time
 import os
 import json
 from MultithreadBooker import Booker
-from DataManager import DataManager
 
 
 MAX_THEAD_COUNT = multiprocessing.cpu_count()
@@ -30,8 +29,7 @@ def start_booking(date, period):
             day=date.day,
             period=period)
 
-        platz = booker.multithread_buchen(debug=True)
-        DataManager.setPlatz(username=user["username"], data=platz)
+        booker.multithread_buchen(debug=True)
 
 
 while True:

@@ -98,25 +98,11 @@ class Booker:
         if type(self.platzholder.get()) == dict:
             booked_platz = self.bots[0].find_booked_seat(
                 jahr=self.year, monat=self.month, tag=self.day, period_param=self.period)
-            booked_platz["area_name"] = booked_platz["area_name"].replace(
-                "KIT-BIB", "")
-            booked_platz["bisHalb"] = False
-            booked_platz["when"] = time_start.strftime(
-                '%A') + ", "+["vormittags", "nachmittags", "abends"][int(self.period)]
             print("=================")
             print("Für:", self.user["name"])
             for key in booked_platz:
                 print(key, booked_platz[key])
-            return booked_platz
         else:
             for i in range(5):
                 print("=============")
             print("TIME IS UP")
-
-            return {
-                "area_name": "",
-                "room": "KEINEN BEKOMMEN",
-                "bisHalb": False,
-                "when": time_start.strftime(
-                    '%A') + ", "+["vormittags", "nachmittags", "abends"][int(self.period)]
-            }
