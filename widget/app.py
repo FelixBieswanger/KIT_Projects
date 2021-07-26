@@ -51,11 +51,13 @@ def get():
             booked_platz["area_name"] = booked_platz["area_name"].replace(
                 "KIT-BIB", "")
             booked_platz["bisHalb"] = False
-            booked_platz["when"] = now.strftime(
-                '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
 
             if period == "1" and now.hour >= 12:
-                booked_platz["when"] += "ab 14h!"
+                booked_platz["when"] = now.strftime(
+                    '%A') + ", ab 14h!"
+            else:
+                booked_platz["when"] = now.strftime(
+                    '%A') + ", ab 14.30"
 
             return booked_platz
     else:
