@@ -68,6 +68,18 @@ class Booker:
 
     def multithread_buchen(self, time_start=datetime.today(), debug=False):
 
+        vllt_schon_gebuchter_platz = self.bots[0].find_booked_seat(
+            jahr=self.year,
+            monat=self.month,
+            tag=self.day,
+            period_param=self.period)
+        if vllt_schon_gebuchter_platz is not None:
+            print("=================")
+            print("Für:", self.user["name"])
+            for key in vllt_schon_gebuchter_platz:
+                print(key, vllt_schon_gebuchter_platz[key])
+            return
+
         # Starte es um 30 nach, weil wenn davor (also 28 o 29) ein PLatz gebucht wird, wird dieser um 30 wieder gelöscht
         date_30 = datetime(time_start.year, time_start.month,
                            time_start.day, time_start.hour, 30)
