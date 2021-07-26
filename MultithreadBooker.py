@@ -115,10 +115,11 @@ class Booker:
 
         print("Starting " + str(self.thread_num) +
               " threads for user", self.user["name"])
+
+        time_start = datetime.today()
         # Start all thread
         for thread in self.threads:
             thread.start()
-
         while self.platzholder.get() == None:
             # Um 33 (also 5min nach start) aufhören, dann sind eh alle gebucht. (2 Min extra um vllt noch Plätze wegzucrashen
             # die für andere gebucht wurden)
@@ -126,7 +127,6 @@ class Booker:
                 self.platzholder.set_threads_stop()
                 break
             time.sleep(1)
-
         # Synchronisation der Threads
         for thread in self.threads:
             thread.join()

@@ -41,18 +41,17 @@ while True:
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         # wait bis kurz vor mitternacht
         start_nacht = datetime(
-            now.year, now.month, now.day, 23, 59, 30)
+            now.year, now.month, now.day, 0, 0) + dt.timedelta(days=1)
 
         print("wait until", start_nacht)
         diff = (start_nacht-now).seconds
         print("sleeping for", diff, "seconds")
         time.sleep(diff)
 
-        date_3_tagen = now + dt.timedelta(days=4)
+        date_2_tagen = start_nacht + dt.timedelta(days=2)
+        print("Buche für", date_2_tagen)
 
-        start_booking(date_3_tagen, "1", nachts=True)
-
-        time.sleep(30)
+        start_booking(date_2_tagen, "0", nachts=True)
 
     # es ist vor der morgens buchung
     if now.hour >= 0:
