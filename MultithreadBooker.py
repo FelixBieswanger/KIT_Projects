@@ -90,7 +90,7 @@ class Booker:
             else:
                 print("Bibot", bot.index, "hat schon alle Plätze versucht")
 
-    def multithread_buchen(self, time_start=datetime.today(), debug=False):
+    def multithread_buchen(self, time_start=datetime.today(), nachts=False, debug=False):
 
         vllt_schon_gebuchter_platz = self.bots[0].find_booked_seat(
             jahr=self.year,
@@ -109,8 +109,8 @@ class Booker:
                            time_start.day, time_start.hour, 30)
         wait_seconds = (date_30-time_start).seconds
 
-        if not debug:
-            print("Waiting "+wait_seconds+"until its time to go...")
+        if debug == False and nachts == False:
+            print("Waiting ", wait_seconds, "seconds until its time to go...")
             time.sleep(wait_seconds)
 
         print("Starting " + str(self.thread_num) +

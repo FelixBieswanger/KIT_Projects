@@ -17,43 +17,55 @@ except:
         user_data = json.loads(file.read())
 
 
-def start_booking(date, period):
+def start_booking(date, period, nachts):
 
     bookers = list()
     for user in user_data.values():
         booker = Booker(
-            thread_num=2,
+            thread_num=MAX_THEAD_COUNT,
             user=user,
             year=date.year,
             month=date.month,
             day=date.day,
             period=period)
 
-        booker.multithread_buchen(debug=True)
+        booker.multithread_buchen(debug=False, nachts=nachts)
 
 
 while True:
 
     # get time now
-    now = datetime.today() - dt.timedelta(days=1)
+    now = datetime.today()
 
-    #start_booking(now, period="1")
-
-    # es ist nach der buchungssession mittags
+    # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
-        tomorrow = now + dt.timedelta(days=1)
+        # wait bis kurz vor mitternacht
+        start_nacht = datetime(
+            now.year, now.month, now.day, 23, 59, 30)
 
+        print("wait until", start_nacht)
+        diff = (start_nacht-now).seconds
+        print("sleeping for", diff, "seconds")
+        time.sleep(diff)
+
+        date_3_tagen = now + dt.timedelta(days=4)
+
+        start_booking(date_3_tagen, "1", nachts=True)
+
+        time.sleep(30)
+
+    # es ist vor der morgens buchung
+    if now.hour >= 0:
         # sleep to next day until 8.28
-        start_morgen_nächster_tag = datetime(
-            tomorrow.year, tomorrow.month, tomorrow.day, 8, 28, 0)
+        start_morgens = datetime(
+            now.year, now.month, now.day, 8, 28, 0)
+        print("wait until", start_morgens)
 
-        print("wait until", start_morgen_nächster_tag)
-
-        diff = (start_morgen_nächster_tag - now)
+        diff = (start_morgens - now)
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        start_booking(tomorrow, "0")
+        start_booking(start_morgens, "0", nachts=False)
 
     # es ist nach der buchungsessions morgens
     if(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
@@ -67,4 +79,4 @@ while True:
         print("sleeping for", diff.seconds, "seconds")
         time.sleep(diff.seconds)
 
-        start_booking(now, "1")
+        start_booking(now, "1", nachts=False)
