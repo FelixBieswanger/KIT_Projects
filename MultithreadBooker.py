@@ -70,7 +70,7 @@ class Booker:
 
         # Starte es um 30 nach, weil wenn davor (also 28 o 29) ein PLatz gebucht wird, wird dieser um 30 wieder gelöscht
         print("Waiting until its time to go...")
-        while time_start.minute != 30 and not debug:
+        while time_start.minute != 30:
             time.sleep(1)
 
         print("Starting " + str(self.thread_num) +

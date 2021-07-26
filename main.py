@@ -30,7 +30,7 @@ def start_booking(date, period):
             day=date.day,
             period=period)
 
-        platz = booker.multithread_buchen(debug=False)
+        platz = booker.multithread_buchen()
         DataManager.setPlatz(username=user["username"], data=platz)
 
 
@@ -38,6 +38,8 @@ while True:
 
     # get time now
     now = datetime.today()
+
+    start_booking(now, period="0")
 
     # es ist nach der buchungssession mittags
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
