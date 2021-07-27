@@ -54,7 +54,7 @@ while True:
         start_booking(date_2_tagen, "0", nachts=True)
 
     # es ist vor der morgens buchung
-    if now.hour >= 0:
+    elif now.hour >= 0 and (now.hour >= 8 and now.minute >= 32):
         # sleep to next day until 8.28
         start_morgens = datetime(
             now.year, now.month, now.day, 8, 28, 0)
@@ -67,7 +67,8 @@ while True:
         start_booking(start_morgens, "0", nachts=False)
 
     # es ist nach der buchungsessions morgens
-    if(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
+    else:
+    #(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
         # sleep bis 14.28
         start_nachmittag = datetime(
             now.year, now.month, now.day, 14, 28, 0)
