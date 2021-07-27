@@ -19,7 +19,8 @@ class Platzholder:
     def add_seat(self, seat):
         if seat not in self.seat_list:
             # in prio adden
-            self.seat_list.append(seat)
+            with self.Lock:
+                self.seat_list.append(seat)
 
     def get_seats(self):
         self.seat_list = sorted(self.seat_list,
