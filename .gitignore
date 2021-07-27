@@ -1,3 +1,5 @@
 __pycache__
 local_logindata.json
 dev.py
+.tmp
+BibBot.py.*.tmp

@@ -23,6 +23,10 @@ class BibBot:
         self.zeiten = ["vormittags", "nachmittags", "abends"]
         self.index = index
 
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
+        }
+
     def build_url(self, endpoint, **kwargs):
         params = "&".join(["=".join((key, kwargs[key])) for key in kwargs])
         return self.base_url + endpoint + ".php?" + params
@@ -39,14 +43,11 @@ class BibBot:
         return params
 
     def anmelden(self, username, password):
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
-        }
-
+    
         anmelde_url = self.build_url(endpoint="admin")
 
         anmelde_seite = self.session.get(
-            anmelde_url, headers=headers).content.decode("utf-8")
+            anmelde_url, headers=self.headers).content.decode("utf-8")
 
         content_anmeldung = self.extract_form_params(soup=BeautifulSoup(
             anmelde_seite, "html.parser"), form_id="logon")
@@ -63,7 +64,7 @@ class BibBot:
             content_anmeldung[k] = params[k]
 
         anmeldung = self.session.post(
-            anmelde_url, data=content_anmeldung, headers=headers)
+            anmelde_url, data=content_anmeldung, headers=self.headers)
 
         soup = BeautifulSoup(anmeldung.content.decode("utf-8"), "html.parser")
         logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
@@ -75,8 +76,9 @@ class BibBot:
             # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)
-            resp = self.session.get(scan_url).content.decode("utf-8")
-
+            
+            resp = self.session.get(scan_url,headers=self.headers).content.decode("utf-8")
+            
             # Alle Freien Plätze extrahieren
             soup = BeautifulSoup(resp, "html.parser")
 
@@ -90,7 +92,7 @@ class BibBot:
                         endpoint="view_entry", id=buchungs_id, area=area, day=tag, month=monat, year=jahr)
 
                     buchungs_info = self.session.get(
-                        buchungs_info_url).content.decode("utf-8")
+                        buchungs_info_url,headers=self.headers).content.decode("utf-8")
                     soup2 = BeautifulSoup(buchungs_info, "html.parser")
 
                     table = soup2.find("tbody")
@@ -158,12 +160,12 @@ class BibBot:
                                    month=platz["month"],
                                    day=platz["day"])
         speicher_url = self.build_url(endpoint="edit_entry_handler")
-        platz_resp = self.session.get(platz_url).content.decode("utf-8")
+        platz_resp = self.session.get(platz_url,headers=self.headers).content.decode("utf-8")
         soup = BeautifulSoup(platz_resp, "html.parser")
 
         speichern_params = self.extract_form_params(soup=soup, form_id="main")
         buchung_abschicken = self.session.post(
-            speicher_url, data=speichern_params).content.decode("utf-8")
+            speicher_url, data=speichern_params,headers=self.headers).content.decode("utf-8")
 
         # Validieren ob für die gewünschte Periode ein Platz gebucht wurde
         soup = BeautifulSoup(buchung_abschicken, "html.parser")
