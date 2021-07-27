@@ -27,7 +27,7 @@ class Mensa_Bot:
                 food_name = fooddata[1].text
                 food_name = food_name.split("[")[0]
                 food_price = fooddata[2].find("span").text
-                menu.append(food_name+" "+food_price)
+                menu.append(food_name+" - "+food_price)
 
             s = "======================="
             s += "\n"
