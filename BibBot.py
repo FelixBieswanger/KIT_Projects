@@ -46,15 +46,16 @@ class BibBot:
     
         anmelde_url = self.build_url(endpoint="admin")
 
+        """
+   
+
         anmelde_seite = self.session.get(
             anmelde_url, headers=self.headers).content.decode("utf-8")
 
-        print(anmelde_seite)
-
         content_anmeldung = self.extract_form_params(soup=BeautifulSoup(
-            anmelde_seite, "html.parser"), form_id="logon")
+            anmelde_seite, "html.parser"), form_id="logon")      
 
-        
+        """  
 
         params = {
             "NewUserName": username,
@@ -63,12 +64,13 @@ class BibBot:
             "Action": "SetName",
             "MIME-Typ": "application/x-www-form-urlencoded"
         }
-
-        for k in params:
-            content_anmeldung[k] = params[k]
+    
+        
+        #for k in params:
+        #    content_anmeldung[k] = params[k]
 
         anmeldung = self.session.post(
-            anmelde_url, data=content_anmeldung, headers=self.headers).content.decode("utf-8")
+            anmelde_url, data=params, headers=self.headers).content.decode("utf-8")
 
        
         soup = BeautifulSoup(anmeldung, "html.parser")
