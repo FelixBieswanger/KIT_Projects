@@ -1,4 +1,4 @@
-import threading
+
 import multiprocessing
 from datetime import datetime
 import datetime as dt
@@ -6,6 +6,8 @@ import time
 import os
 import json
 from MultithreadBooker import Booker
+from Mensa_Bot import Mensa_Bot
+
 
 
 MAX_THEAD_COUNT = multiprocessing.cpu_count()
@@ -65,6 +67,9 @@ while True:
         time.sleep(diff.seconds)
 
         start_booking(start_morgens, "0", nachts=False)
+
+        #send Mensa Menu
+        Mensa_Bot.send_menu()
 
     # es ist nach der buchungsessions morgens
     else:
