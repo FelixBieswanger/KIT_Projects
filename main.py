@@ -38,6 +38,7 @@ while True:
 
     # get time now
     now = datetime.today()
+    Mensa_Bot.send_menu()
 
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
