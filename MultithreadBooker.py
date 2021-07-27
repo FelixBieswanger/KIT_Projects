@@ -39,11 +39,12 @@ class Booker:
 
         print("Bibot", bot.index, "has started working within a thread")
         thread_tryed_seats = list()
+        plätze_leer =False
 
         # Solange bis von einem der Threads ein Platz bebucht wurde
         while not self.platzholder.get_threds_stop():
 
-            if self.platzholder.get_available_seat_count() == 0:
+            if self.platzholder.get_available_seat_count() == 0 or plätze_leer:
                 area = bot.area_prio[bot.index % len(bot.area_prio)]
 
                 free_seats = bot.find_free_seats(
@@ -62,6 +63,8 @@ class Booker:
                     plätze_noch_nicht_versucht.remove(seat)
 
             if len(plätze_noch_nicht_versucht) > 0:
+                plätze_leer = False
+
                 # pick platz
                 platz_buchungs_versuch = None
                 for area in BibBot.area_prio:
@@ -88,6 +91,7 @@ class Booker:
                               "Buchung nicht geklappt, fängt jz neu an..")
 
             else:
+                plätze_leer = True
                 print("Bibot", bot.index, "hat schon alle Plätze versucht")
 
     def multithread_buchen(self, time_start=datetime.today(), nachts=False, debug=False):
