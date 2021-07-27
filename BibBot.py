@@ -49,10 +49,12 @@ class BibBot:
         anmelde_seite = self.session.get(
             anmelde_url, headers=self.headers).content.decode("utf-8")
 
+        print(anmelde_seite)
+
         content_anmeldung = self.extract_form_params(soup=BeautifulSoup(
             anmelde_seite, "html.parser"), form_id="logon")
 
-        print(content_anmeldung)
+        
 
         params = {
             "NewUserName": username,
