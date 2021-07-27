@@ -39,8 +39,19 @@ class BibBot:
         return params
 
     def anmelden(self, username, password):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15"
+        }
+
         anmelde_url = self.build_url(endpoint="admin")
-        content_anmeldung = {
+
+        anmelde_seite = self.session.get(
+            anmelde_url, headers=headers).content.decode("utf-8")
+
+        content_anmeldung = self.extract_form_params(soup=BeautifulSoup(
+            anmelde_seite, "html.parser"), form_id="logon")
+
+        params = {
             "NewUserName": username,
             "NewUserPassword": password,
             "EULA": True,
@@ -48,8 +59,13 @@ class BibBot:
             "MIME-Typ": "application/x-www-form-urlencoded"
         }
 
-        anmeldung = self.session.post(anmelde_url, data=content_anmeldung)
-        soup = BeautifulSoup(anmeldung.content, "html.parser")
+        for k in params:
+            content_anmeldung[k] = params[k]
+
+        anmeldung = self.session.post(
+            anmelde_url, data=content_anmeldung, headers=headers)
+
+        soup = BeautifulSoup(anmeldung.content.decode("utf-8"), "html.parser")
         logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
         self.bib_id = self.extract_param(logon_url, "creatormatch")
 
