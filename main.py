@@ -24,7 +24,7 @@ def start_booking(date, period, nachts):
     bookers = list()
     for user in user_data.values():
         booker = Booker(
-            thread_num=MAX_THEAD_COUNT,
+            thread_num=1,
             user=user,
             year=date.year,
             month=date.month,
@@ -38,6 +38,7 @@ while True:
 
     # get time now
     now = datetime.today()
+    now = datetime(2021,7,27,23,59,55)
 
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
@@ -50,7 +51,7 @@ while True:
         print("sleeping for", diff, "seconds")
         time.sleep(diff)
 
-        date_2_tagen = start_nacht + dt.timedelta(days=2)
+        date_2_tagen = start_nacht + dt.timedelta(days=1)
         print("Buche für", date_2_tagen)
 
         start_booking(date_2_tagen, "0", nachts=True)

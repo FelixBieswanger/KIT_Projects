@@ -39,13 +39,20 @@ class Booker:
 
         print("Bibot", bot.index, "has started working within a thread")
         thread_tryed_seats = list()
+        #möglichkeit um die platzsuche neu zu starten
         plätze_leer =False
+        #sodass wenn die zu buchenden möglichkeiten ausgegangen sind, nicht wieder die selbe area gescaned wird
+        #kann hiermit der index incrementiert und so die nächste area aus der prio liste gescaned werden
+        area_bonus = 0
 
         # Solange bis von einem der Threads ein Platz bebucht wurde
         while not self.platzholder.get_threds_stop():
 
             if self.platzholder.get_available_seat_count() == 0 or plätze_leer:
-                area = bot.area_prio[bot.index % len(bot.area_prio)]
+                if plätze_leer:
+                    area_bonus += 1
+                #durch den modulo operator wird sicher gestellt, dass der ausgesuchte index immer rotierend in der area prio bleibt
+                area = bot.area_prio[(bot.index + area_bonus) % len(bot.area_prio)]
 
                 free_seats = bot.find_free_seats(
                     jahr=self.year,
@@ -53,6 +60,8 @@ class Booker:
                     tag=self.day,
                     period_param=self.period,
                     area=area)
+
+                print("bibot", bot.index, "sucht in", bot.area_names[area],"hat",len(free_seats),"plätze gefunden")
 
                 for seat in free_seats:
                     self.platzholder.add_seat(seat)
