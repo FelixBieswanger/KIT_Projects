@@ -38,7 +38,6 @@ while True:
 
     # get time now
     now = datetime.today()
-    Mensa_Bot.send_menu()
 
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
@@ -57,7 +56,7 @@ while True:
         start_booking(date_2_tagen, "0", nachts=True)
 
     # es ist vor der morgens buchung
-    elif now.hour >= 0 and (now.hour >= 8 and now.minute >= 32):
+    elif now.hour >= 0 or (now.hour >= 8 and now.minute >= 32):
         # sleep to next day until 8.28
         start_morgens = datetime(
             now.year, now.month, now.day, 8, 28, 0)
