@@ -64,9 +64,10 @@ class BibBot:
             content_anmeldung[k] = params[k]
 
         anmeldung = self.session.post(
-            anmelde_url, data=content_anmeldung, headers=self.headers)
+            anmelde_url, data=content_anmeldung, headers=self.headers).content.decode("utf-8")
 
-        soup = BeautifulSoup(anmeldung.content.decode("utf-8"), "html.parser")
+        print(anmeldung)
+        soup = BeautifulSoup(anmeldung, "html.parser")
         logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
         self.bib_id = self.extract_param(logon_url, "creatormatch")
 
