@@ -38,7 +38,6 @@ while True:
 
     # get time now
     now = datetime.today()
-    now = datetime(2021,7,27,23,59,55)
 
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
