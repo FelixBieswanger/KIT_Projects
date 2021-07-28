@@ -103,7 +103,7 @@ class Booker:
                 plätze_leer = True
                 print("Bibot", bot.index, "hat schon alle Plätze versucht")
 
-    def multithread_buchen(self, time_start=datetime.today(), nachts=False, debug=False):
+    def multithread_buchen(self, time_start,nachts=False, debug=False):
 
         vllt_schon_gebuchter_platz = self.bots[0].find_booked_seat(
             jahr=self.year,
@@ -117,9 +117,11 @@ class Booker:
                 print(key, vllt_schon_gebuchter_platz[key])
             return
 
+  
         # Starte es um 30 nach, weil wenn davor (also 28 o 29) ein PLatz gebucht wird, wird dieser um 30 wieder gelöscht
         date_30 = datetime(time_start.year, time_start.month,
                            time_start.day, time_start.hour, 30)
+        print(date_30,time_start)
         wait_seconds = (date_30-time_start).seconds
 
         if debug == False and nachts == False:
@@ -128,8 +130,7 @@ class Booker:
 
         print("Starting " + str(self.thread_num) +
               " threads for user", self.user["name"])
-
-        time_start = datetime.today()
+        
         # Start all thread
         for thread in self.threads:
             thread.start()

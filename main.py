@@ -1,6 +1,6 @@
 
 import multiprocessing
-from datetime import datetime
+from datetime import date, datetime
 import datetime as dt
 import time
 import os
@@ -24,15 +24,15 @@ def start_booking(date, period, nachts):
     bookers = list()
     for user in user_data.values():
         booker = Booker(
-            thread_num=1,
+            thread_num=MAX_THEAD_COUNT,
             user=user,
             year=date.year,
             month=date.month,
             day=date.day,
             period=period)
 
-        booker.multithread_buchen(debug=False, nachts=nachts)
-
+        booker.multithread_buchen(
+            debug=False, nachts=nachts, time_start=datetime.today())
 
 while True:
 
@@ -53,7 +53,7 @@ while True:
         date_2_tagen = start_nacht + dt.timedelta(days=1)
         print("Buche für", date_2_tagen)
 
-        start_booking(date_2_tagen, "0", nachts=True)
+        start_booking(date_2_tagen, "1", nachts=True)
 
     # es ist vor der morgens buchung
     elif now.hour >= 0 or (now.hour >= 8 and now.minute >= 32):
