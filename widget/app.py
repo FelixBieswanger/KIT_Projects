@@ -41,10 +41,10 @@ def get():
         if booked_platz is None:
             return {
                 "area_name": "",
-                "room": "KEINEN BEKOMMEN",
+                "room": "No Seat",
                 "bisHalb": False,
                 "when": now.strftime(
-                    '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
+                    '%a') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
             }
         else:
 
