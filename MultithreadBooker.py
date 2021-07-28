@@ -145,6 +145,27 @@ class Booker:
         for thread in self.threads:
             thread.join()
 
+        #wenn in der kit keiner gefunden wurde, dann schau in HKA
+        if type(self.platzholder.get()) != dict:
+            #try to get a seat in HKA
+            for area in ["28","29"]:
+                if self.platzholder.get() == None:
+                    free_seats = self.bot[0].find_free_seats(
+                            jahr=self.year,
+                            monat=self.month,
+                            tag=self.day,
+                            period_param=self.period,
+                            area=area)
+
+                    for platz in free_seats:
+                        potentieller_platz = self.bots[0].platz_buchen(platz)
+
+                        if potentieller_platz is not None:
+                            print("Bibot 0 (HKA) hat gebucht und fährt nun runter..")
+                            self.platzholder.set(potentieller_platz) 
+                            break
+
+
         if type(self.platzholder.get()) == dict:
             booked_platz = self.bots[0].find_booked_seat(
                 jahr=self.year, monat=self.month, tag=self.day, period_param=self.period)

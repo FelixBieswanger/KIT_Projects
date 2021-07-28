@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 class BibBot:
-    area_prio = ["34", "35", "21", "19", "20", "29", "28"]
+    area_prio = ["34", "35", "21", "19", "20"]
 
     def __init__(self, index=0):
         # Meta Data
