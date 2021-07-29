@@ -78,7 +78,7 @@ class BibBot:
 
     def find_booked_seat(self, jahr, monat, tag, period_param):
 
-        for area in self.area_prio:
+        for area in self.area_prio + ["28", "29"]:
             # URL Bauen und Request für Belegung der Etage an Server schicken
             scan_url = self.build_url(
                 endpoint="day", year=jahr, month=monat, day=tag, area=area)

@@ -34,6 +34,7 @@ def start_booking(date, period, nachts):
         booker.multithread_buchen(
             debug=False, nachts=nachts, time_start=datetime.today())
 
+
 while True:
 
     # get time now
@@ -54,6 +55,8 @@ while True:
         print("Buche für", date_2_tagen)
 
         start_booking(date_2_tagen, "1", nachts=True)
+
+        switch = 1
 
     # es ist vor der morgens buchung
     elif now.hour >= 0 and (now.hour <= 8 and now.minute <= 27):
