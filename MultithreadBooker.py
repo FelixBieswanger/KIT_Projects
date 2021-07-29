@@ -150,7 +150,7 @@ class Booker:
             #try to get a seat in HKA
             for area in ["28","29"]:
                 if self.platzholder.get() == None:
-                    free_seats = self.bot[0].find_free_seats(
+                    free_seats = self.bots[0].find_free_seats(
                             jahr=self.year,
                             monat=self.month,
                             tag=self.day,
