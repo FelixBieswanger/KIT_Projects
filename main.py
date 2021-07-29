@@ -38,8 +38,9 @@ def start_booking(date, period, nachts):
 while True:
 
     # get time now
+    
     now = datetime.today()
-
+    print(now)
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         # wait bis kurz vor mitternacht
@@ -55,8 +56,6 @@ while True:
         print("Buche für", date_2_tagen)
 
         start_booking(date_2_tagen, "1", nachts=True)
-
-        switch = 1
 
     # es ist vor der morgens buchung
     elif now.hour >= 0 and (now.hour <= 8 and now.minute <= 27):
