@@ -40,7 +40,7 @@ while True:
     # get time now
     
     now = datetime.today()
-    print(now)
+    print("Es ist ",now)
     # es ist vor der nacht buchung
     if (now.hour >= 14 and now.minute >= 32) or now.hour > 14:
         # wait bis kurz vor mitternacht
