@@ -56,6 +56,7 @@ while True:
         print("Buche für", date_2_tagen)
 
         start_booking(date_2_tagen, "1", nachts=True)
+        continue
 
     # es ist vor der morgens buchung
     elif now.hour >= 0 and (now.hour <= 8 and now.minute <= 27):
@@ -72,7 +73,7 @@ while True:
 
         #send Mensa Menu
         Mensa_Bot.send_menu()
-
+        continue
     # es ist nach der buchungsessions morgens
     else:
     #(now.hour >= 8 and now.minute >= 32) or now.hour > 8:
