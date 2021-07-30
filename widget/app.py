@@ -55,7 +55,7 @@ def get():
             if period == "1" and now.hour >= 12:
                 booked_platz["when"] = now.strftime(
                     '%A') + ", ab 14h!"
-            elif period == "0" and (now.hour >= 8 and now.minute >= 30):
+            elif period == "0" and (now.hour <= 8 and now.minute <= 30):
                 booked_platz["when"] = now.strftime(
                     '%A') + ", ab 8h!"
             else:
