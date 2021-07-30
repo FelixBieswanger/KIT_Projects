@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, '../Bibbot.py')
-
 from flask import Flask
 from flask import request
 import os
