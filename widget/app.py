@@ -20,10 +20,11 @@ except:
 @app.route('/getplatz', methods=["GET"])
 def get():
     username = request.args.get('username')
-    password = request.args.get("password")
 
+    if username in login_data.keys():
+        pw = login_data[username]["password"]
 
-    if bot.anmelden(username=username, password=password):
+        bot.anmelden(username=username, password=pw)
         now = datetime.today()
 
         period = "0"
@@ -61,9 +62,10 @@ def get():
                 booked_platz["when"] = now.strftime(
                     '%A') + ", "+["vormittags", "nachmittags", "abends"][int(period)]
 
+
             return booked_platz
     else:
-        return "Falsche Anmelde Daten"
+        return {}
 
 
 if __name__ == '__main__':
