@@ -43,18 +43,7 @@ class BibBot:
 
     def anmelden(self, username, password):
     
-        anmelde_url = self.build_url(endpoint="admin")
-
-        """
-   
-
-        anmelde_seite = self.session.get(
-            anmelde_url, headers=self.headers).content.decode("utf-8")
-
-        content_anmeldung = self.extract_form_params(soup=BeautifulSoup(
-            anmelde_seite, "html.parser"), form_id="logon")      
-
-        """  
+        anmelde_url = self.build_url(endpoint="admin")  
 
         params = {
             "NewUserName": username,
@@ -71,10 +60,14 @@ class BibBot:
         anmeldung = self.session.post(
             anmelde_url, data=params, headers=self.headers).content.decode("utf-8")
 
-       
-        soup = BeautifulSoup(anmeldung, "html.parser")
-        logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
-        self.bib_id = self.extract_param(logon_url, "creatormatch")
+        try:       
+            soup = BeautifulSoup(anmeldung, "html.parser")
+            logon_url = soup.find("div", {"id": "logon_box"}).find("a")["href"]
+            self.bib_id = self.extract_param(logon_url, "creatormatch")
+            return True
+        except:
+            return False
+
 
     def find_booked_seat(self, jahr, monat, tag, period_param):
 
