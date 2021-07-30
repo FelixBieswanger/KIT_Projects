@@ -1,0 +1,671 @@
+---
+title: "Modeling and Analyzing Consumer Behavior - Bonus Tasks"
+output: 
+  html_document:
+    toc: true # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    toc_float: true
+    df_print: paged
+    theme: paper
+    highlight: kate
+bibliography: /Users/felixbieswanger/Desktop/Uni_Stuff/KIT/Master/Module/ServiceAnalytics/ModellingWithR/BonusTask/Task5/refrences.bib
+editor_options:
+  chunk_output_type: inline
+---
+
+*Author:* Felix Bieswanger (Matrikelnummer: 2374109)\
+
+This document contains all of the given Bonus Task during the the lecture **"Modeling and Analyzing Consumer Behavior"** this Summersemester 2021.
+
+The Tasks were done during the whole Semester and merged into one file after completing Bonus Task 5.
+
+This Chunk is used to import all libraries that were used throughout this notebook.
+
+```{r, warning=FALSE,message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(psych)
+library(corrplot)
+library(plotly)
+library(ggalt)
+library(ggbeeswarm)
+library(C50)
+library(rsample)
+library(caret)
+library(rpart)
+library(rpart.plot)
+```
+
+# Task One
+
+For the first Task it was our goal to preprocess the data. The data was obtained from an experiment in which participants were given math and writing tasks of varying difficulty. The aim of the study was to find out whether there is a relationship between psychological factors and the difficulty of the tasks.
+
+This Notebook shows step-by-step how the given data is analysed.
+
+## Load the Data and first look
+
+```{r echo=TRUE}
+reports = read.csv("data/bonusTask-reports.csv")
+reports
+```
+
+It is noticeable that the data has some sort of internal structure. It appears that there the combination of Task_Logic and State_Logic determines if there are values in the columns. So there is not necessarily missing data, rather that the data frame has to be filtered in certain ways to use different views.
+
+## Clean the Data
+
+### Remove superfluous entries
+
+First data that does not make sense from a practical point of view is filtered out. For this purpose, all lines were removed where there was a technical contradiction: \* no participantID was enterd (the data can not be mapped to a participant) \* the interview time was 0 (no interview can be conducted with 0 time)
+
+```{r}
+reports.fil1 = reports %>% 
+  filter(participantID != "") 
+paste(nrow(reports)-nrow(reports.fil1),"rows were filtered out with missing participantID")
+reports.fil = reports.fil1 %>%
+  filter(interviewtime..Gesamtzeit > 0)
+paste(nrow(reports.fil1)-nrow(reports.fil),"rows were filtered out, where Gesamtzeit was 0")
+```
+
+Also there where 13 participantID's where there where 9 fewer rows compared to the rest. Taking a closer look, it was clearly an error in the dataset since there was only data from the start and no further data during the interview (and only the 2 Variables that make up Affect are filled).
+
+```{r}
+reports.fil %>% 
+  count(participantID) %>% 
+  filter(n < 10) %>%
+  select(participantID) %>%
+  merge(reports.fil)
+```
+
+So this step rows with the above mentioned participantID's were also removed. Leaving us with 13 Participants (were there is complete data ) with 10 rows each.
+
+```{r}
+excludes = reports.fil %>% 
+  count(participantID) %>%
+  filter(n == 1)
+
+reports.fil = anti_join(reports.fil, excludes, by  = "participantID")
+```
+
+### Aggregate Measures
+
+In the process of data cleansing, columns that belong to each other are combined using the mean (for example the mean is calculated for columns Flow01-Flow10)\
+For that the **dbplyr::mutate** function is used to create new columns. Inside of the **dbplyr::mutate** function, **rowMeans** calculates the mean of the rows for the given columns, which are specifyed in the **select** function.\
+To prevent irritating code for columns with continous columnnames like *Flow01-Flow10* or *Stress01-Stress05* , columns were selected using the start_with function rather than listing all column names.
+
+```{r}
+reports.agg = reports.fil %>% 
+  mutate(Affect= rowMeans(select(reports.fil,EmoValence,EmoArousal))) %>% 
+  mutate(Flow = rowMeans(select(reports.fil,starts_with("Flow_")))) %>% 
+  mutate(Stress = rowMeans(select(reports.fil,starts_with("Stress_")))) %>% 
+  mutate(Motivation = rowMeans(select(reports.fil,starts_with("Motivation_")))) %>% 
+  mutate(Task_Importance = rowMeans(select(reports.fil,starts_with("TaskImportance_")))) %>% 
+  mutate(Intrinsic_Motivation = rowMeans(select(reports.fil,starts_with("TraitIntrinsicMotivation_")))) %>% 
+  mutate(Personality_Extraversion= rowMeans(select(reports.fil,starts_with("Personality_Extraversion_")))) %>% 
+  mutate(Personality_Agreeableness= rowMeans(select(reports.fil,starts_with("Personality_Agreeableness_")))) %>% 
+  mutate(Personality_Conscientiousness= rowMeans(select(reports.fil,starts_with("Personality_Conscientiousness_")))) %>% 
+  mutate(Personality_Neuroticism= rowMeans(select(reports.fil,starts_with("Personality_Neuroticism_")))) %>% 
+  mutate(Personality_Openness= rowMeans(select(reports.fil,starts_with("Personality_Openness_")))) %>% 
+  mutate(Challenge_Skill_Balance= rowMeans(select(reports.fil,TaskDifficulty,TaskSkill,TaskDemands))) %>%
+  mutate(Perceived_Performance=Perfomance)
+```
+
+### Remove superfluous columns
+
+Lastly all relevant columns are selected (which implies that superfluous columns and also the raw columns where there are now aggregated versions, get kicked out). Also the preprocessed data is stored for faster use in further tasks (otherwise all preprocessing steps would have to been executed again).
+
+```{r}
+reports.sel = reports.agg %>% 
+  select(participantID,
+         responseID,
+         TypeLogic,
+         StateLogic,
+         Affect,
+         Flow,
+         DoItAgain,
+         MentalEffort,
+         Stress,
+         Challenge_Skill_Balance,
+         Perceived_Performance,
+         PerformanceSatisfaction,
+         Motivation,
+         Task_Importance,
+         Intrinsic_Motivation,
+         Personality_Extraversion,
+         Personality_Agreeableness,
+         Personality_Conscientiousness,
+         Personality_Neuroticism,
+         Personality_Openness)
+write.csv(reports.sel,"data/reports_preprocessed.csv", row.names = FALSE)
+```
+
+## Three Variables of Interest
+
+1.  The Variable *Affect* is the only variable in the whole dataset for which there is Data is 3 different levels of the Variable StateLogic. Apart from the other Variables that were measured during the round in Task One and Two, Affect was also measured at the start of the survey. So that fact was eye catching for me.
+2.  The second Variable that immediately striked my interest was *Big Five Personality* Traits from the Report Measures (Trait). Those Traits are measured in a renowned psychology test and therefore i am intereseted to see how they can be combined with the other variables.
+3.  Lastly I expect that the Variable *Stress* will be interesting, since in there are a lot of factors in the study design (different difficulties, interruptions) that potentially increases stress for the participants.
+
+## Outlier Detection
+
+Using the 2 or 3 Standard-Deviation (sd) Method uses the mean + sd for determining which datapoints are outliers. The mean and the sd are affected by the Outliers, so if there are datapoints which are very far from the rest, they will be shifted and so the range of acceptance (not outliers) will increase. Meaning that because the acceptance range is bigger, datapoints that would normally be considered as outliers are not detected.\
+In comparison to that the IQR-Method is more resistant to outliers, because it uses the median and quartil ranges (both measures are not affected by outliers). Therefore the 1.5IQR Method seems to be the more stable method. In our dataset the sd method would probably still work, since there are no extreme outliers but the 1,5 IQR Method is chosen and performed for the 3 Variables.  
+```{r}
+out <- boxplot.stats(reports.sel$Affect)$out
+out_ind <- which(reports.sel$Affect %in% c(out))
+
+boxplot(reports.sel$Affect,
+  ylab = "Affect",
+  main = "Boxplot of the Variable Affect"
+)
+mtext(paste("Outliers: ", paste(unique(out), collapse = ", ")),line=-17)
+
+out <- boxplot.stats(reports.sel$Personality_Extraversion)$out
+out_ind <- which(reports.sel$Personality_Extraversion %in% c(out))
+
+boxplot(reports.sel$Personality_Extraversion,
+  ylab = "Personality_Extraversion",
+  main = "Boxplot of the Variable Personality_Extraversion"
+)
+mtext(paste("Outliers: ", ifelse(length(out) == 0, "None", paste(unique(out), collapse = ", "))),line=-17)
+
+out <- boxplot.stats(reports.sel$Stress)$out
+out_ind <- which(reports.sel$Stress %in% c(out))
+
+boxplot(reports.sel$Stress,
+  ylab = "Stress",
+  main = "Boxplot of the Variable Stress"
+)
+mtext(paste("Outliers: ", paste(unique(out), collapse = ", ")),line=-17)
+```
+  
+## Reports Summary
+Below summary statistics of the dataset reports is given. The Variables participantID,responseID,TypeLogic,StateLogic were ignored for this purpose, because they are meta-data.
+
+```{r}
+reports.sel %>%
+  select(-c(participantID,responseID,TypeLogic,StateLogic)) %>%
+  psych::describe()
+```
+
+Also a plot is provided, which individually shows the distribution of the variables.
+
+```{r warning=FALSE}
+reports.sel %>% select(-c(participantID,responseID,TypeLogic,StateLogic)) %>%
+  gather(key="Variable", value="Value") %>%
+  filter(!is.na(Variable)) %>%
+  ggplot( aes(x=Variable, y=Value)) + 
+  geom_violin() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+First thing that can be easily noticed is that all Variables from the Big Five Personality do not spread in comparison to the other variables. This can be seen in the vionlin plot or by looking at the sd values in the dataframe above. Also with these varibales very little low values were entered which is also remarkable.
+
+Futher the Variables Challenge_Skill_Balance, DoItAgain, MentalEffort are distributed rather equally troughout the whole range of the possible values.
+
+Next a correlation analysis was performed, which shows the corrleclation between every possible pair of variables
+
+```{r}
+reports.sel %>%
+  filter(StateLogic == "TASK_ONE" & TypeLogic== "ROUND" ) %>%
+  select_if(~sum(!is.na(.)) > 0) %>%
+  select(-c(participantID,responseID,TypeLogic,StateLogic)) %>%
+  cor() %>%
+  corrplot(type="upper", order="hclust")
+```
+
+(Naturally the diagonal is 1)\
+You can see there are some correlations between the variables. Some of these are very sensible, for example:
+
+- there is a fairly strong positiv correlation between MentalEffort and Motivation (when i am more motivated i try harder) 
+- that when a participant has a high perceived performance, the satisfaction will also be high 
+- when a participant was more stressed, the perceived performance tends to be lower
+
+Some on the ther hand are not so straightforward:
+
+- there seems to be a negative correlation between the Variables MentalEffort and PerformanceStatisfaction, that means the more someone tried the less satisfied he was with the performance
+
+
+
+# Task Two
+At first, as given in the Task, both datasets are loaded and a brief first look is done, to descide which dataset shall be analysed further.
+```{r}
+behavior = read.csv("data/bonusTask-hearts.csv")
+head(behavior)
+```
+```{r}
+physiology = read.csv("data/bonusTask-keys.csv", encoding = "UTF-8")
+head(physiology)
+```
+For this task I will further analyze the physiology data, because for me its easier to imagine the data. In the following the variables are explained and visualized to gain more insight. In this process, variables are also combined to achieve a better 
+understanding of the dataset. Nevertheless, attention is given to the distributions of the individual variables to be apparent.
+  
+## Better understanding of the temporal dimension
+### Date Distribution
+First, let's look at the time dimension of the data set. In the first plot it is shown, when participants attended the study. For that the Column TimeStamp was casted from *character* to *Date*. Also the data was grouped by Date and participantID afterwards the rest of the data was droped using the summarise method, leaving behind the distinct count of participants per day.
+  
+Clearly evident from the plot, between Jan 31 and Feb 03 the majority of the participants attended the study.
+```{r}
+physiology = mutate(physiology, Date=as.Date(TimeStamp)) 
+physiology %>%
+  group_by(Date,participantID) %>%
+  summarise(.groups="drop") %>%
+  ggplot(mapping = aes(Date,fill=participantID)) + 
+    geom_histogram(bins=30) +
+    scale_x_date(date_breaks = "3 days",date_labels = "%b %d") +
+    ylab("Number of participants")
+```
+  
+### Time Distribution
+For this second plot, the focus lyes on the time of day the study was conducted. 
+Here another cast of the variable TimeStamp had to be done, because the *Date*-Datatype doesn't support time (Hours and Seconds) information. 
+Therefore POSIXct was used, while deriving the format by looking at the raw data. Again a clear peak is visible: the most participants worked on the tasks between 3pm and 6pm.
+  
+**Strech Task:** The ggplot was converted to an plotly-plot with the method ggplotly. In this case the interactive plot helps to seperate the different participants, since they are overlapping often. Also the interactive legend makes it possible to hide participant to better understand only a subset.
+```{r}
+physiology= physiology %>% 
+  mutate(DateTime=as.POSIXct(strptime(TimeStamp, format = "%Y-%m-%dT%H:%M:%S"))) %>% 
+  mutate(Time=as.POSIXct(format(DateTime, "%H:%M:%S"),format="%H:%M:%S"))
+
+ggplot_bar <- physiology %>% 
+  mutate(TimeRounded =as.POSIXct(format(Time, "%H:%M"),format="%H:%M")) %>%
+  count(TimeRounded,participantID) %>%
+  ggplot(mapping=aes(x=TimeRounded,y=n,fill=participantID,group=1)) + 
+    ylab("Count KeyInteractions") +
+    geom_bar(stat='identity') 
+ggplotly(ggplot_bar)
+```
+
+## Better understanding the keyboard inputs
+In this section it is further look at how the participants interacted (physical) with the keyboard during examination.  
+  
+### Distribution of KeyBoard-Input-Events.
+Lets first look at the distribution of KeyBoard-Input-Events. It is consirning that there was more recorded *KEY_PRESSED* events than *KEY_RELEASED* (I would have expected that there would be an equal amount of both events). Maybe there was a technical error.  
+```{r}
+physiology %>% count(Event) %>% ggplot(mapping = aes(Event,n)) + geom_bar(stat="identity") + ylab("Number of Keyboard-Events")
+```
+  
+### Distribution of Pressed-Keys
+Next we will looked at, which Key got pressed the most. For this plot the dataset was filtered to Event=KEY_PRESSED, afterwards counted and finally sorted descendingly.  
+  
+**Strech Task:** Also here an interactive plot was made. The big benifit this time around is that plotly allows you to zoom into areas. This is espescially helpful since there are very many small bars.
+
+```{r}
+ggplotly(physiology %>% 
+  filter(Event == "KEY_PRESSED") %>%
+  count(Key) %>%
+  ggplot(mapping=aes(y = reorder(Key,n), x=n)) + 
+    ylab("Keys") +
+    xlab("Number of Pressed Keyboard_Keys") + 
+    geom_bar(stat="identity"))
+```
+**Addition:** Because the range of numbers are so big and therefore some bars of the plot no visible, below a number representation is given:
+```{r}
+physiology %>%
+  filter(Event == "KEY_PRESSED") %>%
+  count(Key) %>%
+  arrange(desc(n))
+```
+### Distribution of Keys in relation to which Task
+This plot shows the distribution of pressed keys depending on the current task. You can clearly see that in the math task mainly only numbers and the Enter key were pressed. From this, one can possibly deduce that the math tasks contained more arithmetic tasks than proofs or similar.  
+In contrast to the writing task where letters were entered as the largest block. Here there are also a lot of other keys that presumably assisted in the writing process ("delete", "hyphen", etc).  
+Another important insight that can be gained from this plot is of course that writing tasks generate more pressed keys.  
+Also here a plotly plot was created to get the frequency of the pressed keys when hovering over areas.
+
+```{r}
+ggplotly(physiology %>%
+      filter(Event == "KEY_PRESSED") %>%
+      ggplot(mapping = aes(StateLogic, fill=Key)) +
+        geom_bar() + 
+        scale_x_discrete(labels=c("MATH","WRITING")))
+```
+### Distribution of the amount of data in relation to participants  
+Here again, it is clear that significantly fewer keys were pressed during the math task.However, one can clearly see that the different participants, especially in the writing tasks, used the keyboard with different frequency and, as a result, produced different amounts of text.  
+As can be seen, the participants used the keyboard for input in the math tasks about the same number of times. As noted earlier, the math tasks probably consisted of arithmetic tasks where only numbers were entered. Therefore, it makes sense that everyone pressed a similar number of keys, since even with different calculated results the number of characters remains mostly the same.  
+```{r}
+physiology %>% 
+  filter(Event == "KEY_PRESSED") %>% 
+  ggplot(mapping = aes(participantID, fill= StateLogic)) +
+  geom_bar()
+```
+  
+## More Advanced Plots
+In this plot you can see the activity of the users during the study. Since the users took different amounts of time to answer the questions, a MinMax normalization was performed for each user and each task. The resulting number can be seen as a relative time. It tells what percentage of his completion time of the study has already been used up. By this normalization it is possible to summarize all users.  
+A few words about Task 1: In this view you can easily see the washout screens of the math task, during which no keyboard activity took place. In addition, you can guess that it might have been an easy task at the beginning, because many characters were written within a short time. In the remaining course, one can observe that rather few characters were entered, which can be justified by the fact that here intermediate calculations were carried out on a sheet of paper.  
+Regarding Task 2: These tasks were writing tasks. This can also be guessed from the keyboard activity. You can see that there were phases in which a lot of writing was done. However, these were preceded by phases with little activity. One reason for this could be that first the task was read and a rough structure was developed in the head before the actual writing took place. Since we know from the study schedule that there were 3 assignments, this reasoning has some credibility.
+
+It is important to note that these are only guesses and may have completely different reasons.  
+
+```{r}
+physiology %>%
+  filter(Event == "KEY_PRESSED") %>%
+  group_by(participantID,StateLogic) %>%
+  mutate(minTime=as.numeric(min(Time))) %>%
+  mutate(maxTime=as.numeric(max(Time))) %>%
+  mutate(maxTimeReal=max(Time)) %>%
+  mutate(relativPointinTime=round((as.numeric(Time)-minTime)/(maxTime-minTime),digits = 2)) %>%
+  ungroup() %>%
+  count(relativPointinTime,StateLogic) %>%
+  ggplot(mapping=aes(x=relativPointinTime,y=n,group=StateLogic)) + 
+    geom_line(stat='identity',aes(color=StateLogic)) +
+    ylab("Number of pressed Keys")
+```
+  
+Here you can see how long it took each participant to complete the study. It is clear that there are hardly any differences between the participants. Since Math and Writing Round have a standardized length the variations can be explained by participants taking different amount of time answering the Task Survey.
+```{r}
+physiology %>%
+  group_by(participantID,StateLogic) %>%
+  mutate(minTime=min(Time)) %>%
+  mutate(maxTime=max(Time)) %>%
+  mutate(duration=maxTime-minTime) %>%
+  dplyr::summarize(duration=min(duration), .groups = "drop") %>%
+  ggplot(mapping=aes(participantID,duration,fill=StateLogic)) + 
+    geom_bar(stat='identity') + 
+    scale_y_continuous() + 
+    ylab("Duration in Minutes")
+```
+
+# Task Three
+## Preprocessing the Data
+Read the preprocessed Data from BonusTask 1.
+```{r}
+reports.pre = read.csv("data/reports_preprocessed.csv")
+reports.pre
+```
+Small preprocessing to prevent na values in the data. Since the data is has multiple views: before task, in task and at the end of the task. Every View has different Columns/Variables which are filled.  
+In this preprocessing the data is filtered to get data which is recorded while doing Task 1 or Task 2. so that there are no missing values in the columns. Afterwards all columns that dont contain anly values (columns used in different views) are dropeed (only for the clustering task). Lastly the dataframe is aggregrated by calcualting the mean per participant and TypeLogic(Math or Writing Task).  
+As seen below, we now have 2 rows for each participant, one for Task_ONE and one for TASK_TWO.  
+```{r}
+reports.round = reports.pre %>% 
+  filter(TypeLogic == "ROUND" & (StateLogic == "TASK_ONE" | StateLogic == "TASK_TWO")) %>%
+  select(-c(responseID,TypeLogic)) %>%
+  select_if(~sum(!is.na(.)) > 0) %>%
+  group_by(participantID,StateLogic) %>%
+  summarise_all(mean) %>%
+  data.frame()
+reports.round
+```
+## Building the Clustering Model
+In this Bonus Task a cluster analysis should be performed. 
+  
+As noted in the task, the investigation of the variable Flow is very interesting. According to @csikszentmihalyi2000beyond, flow describes the state of being completely focused and concentrated on the task at hand. He identifies nine dimensions that make up flow, one of which is Challenge Skill Balance. Thus, the suggestion to perform a clustering with the variables Flow and Challenge Skill Balance seems to be convincing.  
+Although again looking at the correlation-matrix you can see there is a moderately strong positive correlation between the two variables at hand. On the one hand, this supports the theory of @csikszentmihalyi2000beyond that Challenge Skill Balance is a dimension of the composite variable Flow. On the other hand, it is questionable whether such a clustering will yield much further information, since the data will follow a positive trend due to the self-correlation just described.
+  
+So looking at the correlation matrix I look at variable combinations that were not correlated. For me the combination *Stress & PerformanceSatisfaction* seemed intriguing. So they where chosen to perform the clustering.  
+```{r}
+reports.round %>%
+  select(-c(participantID,StateLogic)) %>%
+  cor() %>%
+  corrplot(type="upper", order="hclust")
+```
+\
+In the first step, of building the model, a search for the "optimal" number of cluster was performed. This search was done using the so called "elbow-method": It involves running the algorithm multiple times over a loop, with an increasing number of cluster choice and then plotting a clustering score as a function of the number of clusters @sarkar_clustering_2019.  
+In this plot the goal is to search for the spot of the diagram that most resembles an elbow. The idea is that we want a small SSE, but that the SSE tends to decrease toward 0 as we increase k (the SSE is 0 when k is equal to the number of data points in the dataset, because then each data point is its own cluster, and there is no error between it and the center of its cluster). So our goal is to choose a small value of k that still has a low SSE, and the elbow usually represents where we start to have diminishing returns by increasing k.  
+  
+Before the search, the preprocessed data was split into the meta-data (participantID,StateLogic) and the data for the actual k-means clustering model. This was done because the Metadata can not be part of the K-Means Model, but is useful later on for interpretation purposes.  
+Also the 2 Variables (PerformanceSatisfaction ,Stress) for the clustering were extracted.
+
+It is not obvious from our model where the optimum for the parameter k is located. But for this analysis the paramter was defined to be *4* as good trade-off between generalization and overfitting.    
+  
+(This Code section is directly taken from the slide-deck "Exercise 3: Conjoint and Cluster Analysis", Page: 46)  
+```{r}
+set.seed(42)
+
+minClusters <- 2
+maxClusters <- 25
+metadata_dataframe = subset(reports.round,select=c(participantID,StateLogic))
+cluster_dataframe = scale(subset(reports.round,select=c(PerformanceSatisfaction ,Stress)))
+SSw <- data.frame(clusters = minClusters:maxClusters,errors = numeric(maxClusters-1)) 
+for (i in minClusters:maxClusters) {
+  SSw[which(SSw$clusters == i), "errors"] <- sum(kmeans(cluster_dataframe, centers = i)$withinss)
+}
+ggplot(SSw, aes(x = clusters, y = errors)) + geom_line() + geom_point() + scale_x_continuous(breaks=c(2:25))
+```
+\
+Here the K-Means Model was created with 4 clusters to search for. Also the model summary was printed:  
+As you can see this model achieved between_SS / total_SS =  76.6 % which is pretty good, since 100% would be a perfect model.
+```{r}
+set.seed(69)
+fit <- kmeans(cluster_dataframe, centers = 4)
+fit
+```
+Here the dataset reports and the model data are merged again. Also the positions of the centroids are extracted.  
+```{r}
+#dataframe with data and cluster
+reports.cluster <- data.frame(metadata_dataframe,cluster_dataframe, fit$cluster) 
+reports.cluster$fit.cluster <- as.factor(reports.cluster$fit.cluster)
+reports.cluster
+
+#position of the clusters
+reports.centers = as.data.frame(fit$centers)
+reports.centers$fit.cluster = rownames(reports.centers)
+```
+## Analysing the K-Means Model and Interpretation
+
+Below a plot shows the effects of the Cluster Analysis, where each dot represents a participant and task and the triangles are the cluster centers (so called centroids).  
+  
+The fairly good model performance can also be seen in the plot. All clusters are nicely separated from each other and all datapoints are reasonably close to their class centroids. Cluster 1 seems to be very large, so increasing the cluster size may be better. But looking at the structure i think it is reasonable that they have been clustered together. Which brings me directly to the contextual analysis of the model:  
+The model has found 4 Clusters, which can loosely be seen as 4 quadrants: 
+  
+1. Bottom Left: those who have not let theirselves get stressed out but also not satisfied with their performance
+2. Top Right: those who were stressed, but also very satisfied
+3. Top left: those who have not let theirselves get stressed out but were still satisfied with their performance
+4. Bottom Right: those who were stressed, but still not satisfied  
+```{r}
+reports.cluster %>%
+  ggplot(aes(Stress, PerformanceSatisfaction ,color=fit.cluster)) +
+    geom_point() +
+    geom_encircle(aes(fill = fit.cluster), s_shape = 1, expand = 0,alpha = 0.2, color = "black", show.legend = FALSE) +
+    geom_point(data=reports.centers,mapping=aes(Stress, PerformanceSatisfaction),shape=17,size=5) +
+    geom_text(data=reports.centers,mapping=aes(Stress, PerformanceSatisfaction, label = fit.cluster),size=8,nudge_x = 0.15) + 
+    theme(legend.position="none")
+```
+\
+As asked in the assignment, it was then looked at whether there was a dominant TASK in the cluster. For this purpose, the relative proportion per cluster type and state was calculated using the total number of data points within the cluster. It is noticeable that there is no dominating task type for the respective clusters. This raises the assumption that the cluster type depends more on the type of participant than on the task at hand. That seems that the participant was no more stressed, because e.g. a math task had to be done.\
+```{r}
+cluster.sizes = as.data.frame(fit$size)
+cluster.sizes = rename(cluster.sizes ,size = "fit$size")
+cluster.sizes$fit.cluster = rownames(cluster.sizes )
+
+reports.cluster %>%
+  count(fit.cluster,StateLogic) %>%
+  merge(cluster.sizes, on="fit.cluster") %>%
+  mutate(relative.n = n / size) %>%
+  ggplot(aes(fill=StateLogic,x=fit.cluster,y=relative.n)) +geom_bar(position="dodge", stat="identity")
+```
+\
+To confirm this assumption, in the last plot it was looked at which participant got assigned to which cluster at which state. To make the chart easier understandable, additional logic has been implemented, which combines participants that have been assigned to the same cluster in both tasks.  Also, jitter has been added to make the participantIDs more readable (since in this plot only the assigned clusters are shown, the participantID would have been in the same position (cluster centroid) making them overlap).  
+  
+You can see that the assumption seems to be true for some of the participants. In this case, the same cluster was assigned for both tasks. For these, the assumption can be made that their performance type is such that the tasks to be worked on do not play a role. Examples of this would be participant B or K who were assigned to cluster 1. These two participants may not have been very keen on the study and may not have taken it very seriously.  
+However, it is also clear that there are many participants for whom the cluster varies depending on the task. In this case, participants A and K can be highlighted as examples: These are very self-confident with their results, however, they are perhaps more interested in math, since less stress was caused during the processing, compared to the writing task.\
+```{r warning=FALSE}
+set.seed(42)
+
+diff.clusters = 
+  reports.cluster %>%
+  group_by(participantID,fit.cluster, StateLogic) %>%
+  summarise(.groups = "drop") %>%
+  spread(StateLogic, fit.cluster) %>%
+  filter(TASK_ONE != TASK_TWO) %>%
+  gather("key","fit.cluster",2:3) %>%
+  mutate(TASK = key) %>%
+  select(-key)
+
+  reports.cluster %>%
+  group_by(participantID,fit.cluster, StateLogic) %>%
+  summarise(.groups = "drop") %>%
+  spread(StateLogic, fit.cluster) %>%
+  filter(TASK_ONE == TASK_TWO) %>%
+  mutate(TASK="TASK_ONE & TASK_TWO")%>%
+  gather("key","fit.cluster",2:3) %>%
+  select(-key) %>%
+  union(diff.clusters) %>%
+  merge(reports.centers) %>%
+  select(participantID, fit.cluster, Stress, PerformanceSatisfaction, TASK) %>%
+  ggplot(aes(Stress, PerformanceSatisfaction,label=fit.cluster)) +
+    geom_point() +
+    geom_label(size=10) +
+    geom_text(aes(Stress, PerformanceSatisfaction,label=participantID,color=TASK),size=5,position=position_jitterdodge(jitter.width = 0.4 ,jitter.height = 0.3, dodge.width = 1))
+  
+```
+# Task Four
+## Model Idea: Classify behavior based on reports and physiology data  
+The main idea of the classification is, to see if the candidates typing accuracy can be predicted based on reports and physiology data. In this model, the typing accuracy is measured by how many times the candidate pressed the correction key "⌫". The frequency of the pressed correction key is divided into categories for this purpose. \
+Since the task required 2 different types of models, a "normal" classification model is created first. For the 2nd model, a regression tree model is also created to predict the number of correction characters. This prediction can then be eventually converted into categories and the performance of the two models can be compared.
+
+## Preprocessing
+Again read the preprocessed Data from BonusTask 1 and also the other given data.
+```{r}
+reports = read.csv("data/reports_preprocessed.csv")
+keys = read.csv("data/bonusTask-keys.csv")
+hearts = read.csv("data/bonusTask-hearts.csv")
+```
+First a preprocessing of the keys data is done, which is the variable we want to predict in this model:  
+Here each participant is assigned the category per SateLogic, how often the correction key was operated. First of all, the number of times the key "⌫" occurs per participant and State_Logic is counted. Then normalized for each State_Logic (since it was already observed in bonus task 1 that the total number of keys pressed in task 2 is much higher than in task 1) and finally transformed into a categorical (factor) variable (with 4 levels equally spread between the scaled range).\
+```{r}
+keys.pre = keys %>%
+  filter(Event == "KEY_PRESSED") %>%
+  filter(Key == "⌫" ) %>%
+  count(participantID, StateLogic) %>%
+  group_by(StateLogic) %>%
+  mutate(n.scale =scales::rescale(n,to=c(0, 1))) %>%
+  mutate(category=cut(n.scale,
+             breaks=c(-Inf,0.25,0.5,0.75,Inf), 
+             labels=c("low","low-medium","medium-high","high")
+             )) %>%  
+  select(-c(n.scale))
+```
+For the 2nd Model (Regression Tree) the cutoff points of the categories are stored, so that later on predicted values can be mapped to their respective category.
+```{r}
+cuttoff_points = keys.pre %>% 
+  arrange(StateLogic,n) %>%
+  group_by(StateLogic,category) %>%
+  summarise(n_cuttoff = max(n),.groups = "drop")
+cuttoff_points
+```
+Next a preprocessing of the reports dataset, which represents the first part of the features of this model. Here variables from each participant that were measured during a round are selected and the mean was calculated based on the task. 
+```{r}
+reports.pre = reports %>% 
+  filter((StateLogic == "TASK_ONE" | StateLogic == "TASK_TWO") & TypeLogic == "ROUND") %>%
+  mutate(StateLogic = as.factor(StateLogic)) %>%
+  select_if(~sum(!is.na(.)) > 0)  %>%
+  select(-c(responseID, TypeLogic)) %>%
+  group_by(participantID,StateLogic) %>%
+  summarise_all(mean)
+reports.pre
+```
+In this step, the mean of 2 relevant Columns from the hearts dataset is calculated for each task and each participant. Interesting enough there was no hearts data for the participant F and G.
+```{r}
+sumcols = c("MvgAvgHRs","MvgAvgIBIs","RRIntervals")
+hearts.pre = hearts %>% 
+  group_by(participantID,StateLogic) %>%
+  summarise_at(sumcols,mean)
+hearts.pre
+```
+In the last step of preprocessing, the 3 separate dataframes are joined into one big dataframe. For the missing data as for participant F and G, the columns mean value was replaced.\
+Also the split is performed which divides the data into the training set and the set test. But before doing so, the rows had to be randomly arranged so that after the split in the next step participants are distributed throughout training and test set.  
+I chose a high split ratio of 85% (usually 70%), but since we don't have a lot of data, I wanted to give the model some extra observations to learn from.
+```{r}
+set.seed(420)
+#Merging the Datasets
+data.classification = merge(reports.pre,keys.pre, by=c("participantID","StateLogic"),all.x = TRUE)
+data.classification = merge(data.classification, hearts.pre,by=c("participantID","StateLogic"),all.x = TRUE)
+
+data.classification = mutate_if(data.classification,is.numeric,funs(ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+#shuffling the data
+rows = sample(nrow(data.classification))
+data.classification <- data.classification[rows,]
+data.classification
+
+# Create the Split
+valid_split <- initial_split(data.classification, 0.75)
+data.train = analysis(valid_split)
+data.test <- assessment(valid_split)
+y_test <- data.test$category
+```
+## Model Building
+### Decision Tress (C5.0)
+First the names of our predicition features are stored in a variable to make it easy to select the right data in the following steps. Next the C.50 Model is built using our features (all columns except metadata participantID,category,n) and the summary printed.  
+
+```{r}
+features <- setdiff(names(data.classification),c("participantID","category","n"))
+m1 <- C5.0(data.train[features], data.train$category ,trails=1000, control=C5.0Control(earlyStopping = TRUE,minCases = 2,CF=1))
+plot(m1)
+```
+Also the decision rules of the classification model can be plotted, giving a good visual overview.\
+As already mentioned (and also expected) the number of Correction Operations is heavily dependent on the Task (Math & Writing). But since these were separately standardized, it is interesting that the Variable Statelogic is chosen as the one with the Most Information Gain. I think it is mainly because the tasks are completely diffrent.\
+\
+In this step the trained C5.0 Model is used to predict for the test data. Sadly only a very low accuracy of 42.9% (still a little bit better than randomly guessing since there are 4 levels) can be noted.
+```{r}
+p1 <- predict(m1, data.test[features])
+accuracy <- sum(p1 == y_test) / length(p1) 
+paste0((accuracy * 100), "% accuracy")
+```
+
+### Regression Tree
+Next as explained,a regression tree is built to predict the number of correction entries.\
+By setting the parameter cp very low, the model is told to not automatically prune off splits, since I want to see the splits made.
+```{r}
+features <- setdiff(names(data.classification),c("participantID","category","n"))
+regression_tree <- rpart(
+  formula = as.formula(paste("n~", paste(features, collapse="+"))),
+  data = data.train,
+  method  = "anova",
+  control=rpart.control(minsplit=2,cp=0.0001,maxdepth = 30))
+rpart.plot(regression_tree)
+```
+Below the conversion of numerical to categorical is made for the predicted values. For each StateLogic the saved Cuttoff-Points are used to map the according categorical level.\
+At first glance it looks like the model has not learned anything, because the predicted category is always the same. But if you look closer, you can see that different Correction entry values were predicted and then checked into the same category (based on the cutoff values of the corresponding StateLogic).
+```{r warning=FALSE}
+regression_preds = predict(regression_tree, data.test[features])
+
+data.test$preds = regression_preds
+data.test.regression = data.test %>% 
+  group_by(StateLogic) %>%
+  mutate(pred_category= cut(preds,
+                            breaks=c(-Inf,cuttoff_points[cuttoff_points$StateLogic==StateLogic,]$n_cuttoff),
+                            labels=cuttoff_points[cuttoff_points$StateLogic==StateLogic,]$category)) %>%
+  arrange(StateLogic,n)
+
+
+data.test.regression %>%
+   select(c(StateLogic,n,category,preds,pred_category))
+
+```
+After this mapping the accuracy can be calculated like before.
+```{r}
+accuracy <- sum(data.test.regression$pred_category == data.test.regression$category) / length(data.test.regression$StateLogic) 
+paste0((accuracy * 100), "% accuracy")
+```
+
+
+Using the Variables from the first Plot the Data. Also the ground truth and the predicts value is plotted which the color stating which was right and wrong.\
+If you look at the distribution of the data points and their associated classes, you will see that it is difficult to form clusters with these 2 variables.
+```{r}
+data.test.regression = data.test.regression%>%
+  mutate(correctness=ifelse(pred_category == category,"correct","wrong"))
+data.test.regression %>%
+  ggplot(aes(MentalEffort,DoItAgain,label=category,color="ground truth")) + geom_text()  + 
+  geom_text(data = data.test.regression,mapping=aes(label=pred_category,vjust=-0.5,color=correctness))
+```
+##  Concluding Statements 
+The test set contains only very few observations and therefore each observation accounts for 1/6 of the performance, it is difficult to make a general statement about the quality of the models (because one falsely classified observation has a huge impact on the score. Since the classification model and the regression model perform medium well, it is difficult to say whether the tip accuracy can be measured by the database. To make a more substantiated statement the dataset should consist of way more datapoints.
+
+It would also seem likely that there were participants who simply typed better and more accurately than others and that the stress of the study had no influence on this.
+
+# Task Five
+
+Below a short text is written that shows the importance of reproducable research and how R-Marksdows (such as this one) help with that:\
+A number of new discoveries are made when scientific papers are published. When reading, one must always critically evaluate the significance of the results of the study. After all, papers in which the claims formulated therein cannot be reproduced carry little weight as scientific discoveries.\
+Rather, a publication should contain all the information so that a third scientist, uninvolved in the original study, can conduct the study again and produce the same results @mesirov2010accessible. The reproducibility of a study is therefore the standard for verifying scientific claims @mesirov2010accessible. In computational sciences, according to @peng2011reproducible, the gold standard is a paper in which the analysis code and the analyzed data are available in such a form that the findings can be recovered and a complete replication of the study is guaranteed.
+
+```{r ssa-logo, fig.align = 'center', out.width = "60%", fig.cap = "Caption 1: The Reproducibiliy Spectrum presented by @peng2011reproducible", echo=FALSE}
+knitr::include_graphics("./Task5/reproducability_spectrum.png")
+```
+
+According to @mesirov2010accessible, there have been approaches to combine active code snippets, text and graphics since 1990, especially with Markdown languages. Further @valdez2020making says R is the de facto standard when it comes to static analysis of data. Perfectly matching to this, there is a Markdown technology for R, so called R Markdown (Notebooks), with which the creation of fully reproducible analyses according to @baumer2015r is simple and effortless.\
+With R Markdown, the analysis code and the explanatory text can be written in the same document. This is implemented by rendering the comprehensively annotated R code in the executed state as an HTML file. By using so called chunks each analysis step can be separated, under each one the executed code is written and so complicated evaluations can be explained step by step.
+
+So, in summary, R markdowns can be used to make statistical analysis, which are also easy reproducible for other scientists.
+
+# References
